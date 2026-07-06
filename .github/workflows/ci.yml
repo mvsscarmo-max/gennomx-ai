@@ -1,0 +1,253 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  # ── Secret scan ──────────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_ENABLE_SUMMARY: "true"
+
+  # ── Backend lint + type check ───────────────────────────────────────────────
+  backend-lint:
+    name: Backend — Lint & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock && pip install --no-deps -e .
+
+      - name: Ruff lint
+        run: ruff check .
+
+      - name: Ruff format check
+        run: ruff format --check .
+
+      - name: Mypy type check
+        run: mypy app workers --ignore-missing-imports
+
+  # ── Backend unit tests ──────────────────────────────────────────────────────
+  backend-unit:
+    name: Backend — Unit Tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock && pip install --no-deps -e .
+
+      - name: Run unit tests
+        run: pytest tests/unit/ -v --tb=short -q
+        env:
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost/test
+          SUPABASE_URL: https://test.supabase.co
+          SUPABASE_ANON_KEY: test-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: test-service-key
+          API_SECRET_KEY: test-secret-key-32-chars-minimum!!
+          REDIS_URL: redis://localhost:6379/0
+          MCP_TOKEN_CHATGPT: test-chatgpt-token
+          MCP_TOKEN_CLAUDE: test-claude-token
+
+  # ── Backend integration tests ───────────────────────────────────────────────
+  backend-integration:
+    name: Backend — Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-lint, backend-unit]
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: gennomx
+          POSTGRES_PASSWORD: gennomx
+          POSTGRES_DB: gennomx_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock && pip install --no-deps -e .
+
+      - name: Run Alembic migrations
+        run: python -m alembic -c migrations/alembic.ini upgrade head
+        env:
+          DATABASE_URL: postgresql+asyncpg://gennomx:gennomx@localhost:5432/gennomx_test
+          DATABASE_URL_SYNC: postgresql://gennomx:gennomx@localhost:5432/gennomx_test
+
+      - name: Run integration tests
+        run: pytest tests/integration/ -v --tb=short -q
+        env:
+          DATABASE_URL: postgresql+asyncpg://gennomx:gennomx@localhost:5432/gennomx_test
+          DATABASE_URL_SYNC: postgresql://gennomx:gennomx@localhost:5432/gennomx_test
+          SUPABASE_URL: https://test.supabase.co
+          SUPABASE_ANON_KEY: test-anon-key
+          SUPABASE_SERVICE_ROLE_KEY: test-service-key
+          API_SECRET_KEY: test-secret-key-32-chars-minimum!!
+          REDIS_URL: redis://localhost:6379/0
+          MCP_TOKEN_CHATGPT: test-chatgpt-token
+          MCP_TOKEN_CLAUDE: test-claude-token
+          ENVIRONMENT: development
+
+  # ── Frontend lint + type check ──────────────────────────────────────────────
+  frontend-lint:
+    name: Frontend — Lint & Type Check
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: TypeScript check
+        run: npm run typecheck
+
+      - name: Dependency audit
+        run: npm audit --audit-level=moderate
+
+  # ── Frontend build ──────────────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend — Build
+    runs-on: ubuntu-latest
+    needs: [frontend-lint]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+
+  frontend-e2e:
+    name: Frontend — E2E
+    runs-on: ubuntu-latest
+    needs: [frontend-lint]
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Run dashboard E2E
+        run: npm run test:e2e
+
+  # ── Security scan ───────────────────────────────────────────────────────────
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [backend-unit]
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock && pip install --no-deps -e .
+
+      - name: pip-audit (dependency vulnerabilities)
+        run: pip-audit -r requirements.lock
+
+      - name: Bandit (code security)
+        # B608 is covered by Ruff's reviewed allowlist: dynamic fragments are
+        # internal predicates/columns while every external value stays bound.
+        run: bandit -r app workers -ll -x tests -s B608

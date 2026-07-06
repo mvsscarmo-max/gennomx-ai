@@ -1,0 +1,139 @@
+{
+  "designSystem": "GennomX",
+  "theme": "Dark Mode Expandido",
+  "version": "1.0.0",
+  "tokens": {
+    "colors": {
+      "brand-rose": {
+        "900": { "value": "#7A4356", "type": "color" },
+        "800": { "value": "#9C667D", "type": "color", "description": "Apoio sofisticado" },
+        "700": { "value": "#B85C72", "type": "color" },
+        "600": { "value": "#D96E87", "type": "color", "description": "Botões em bg claro" },
+        "500": { "value": "#F2829B", "type": "color", "description": "Cor Principal" },
+        "400": { "value": "#F692A8", "type": "color" },
+        "300": { "value": "#FFACC0", "type": "color" }
+      },
+      "secondary-slate": {
+        "900": { "value": "#11141D", "type": "color", "description": "Quase preto frio" },
+        "800": { "value": "#202430", "type": "color", "description": "Fundo premium" },
+        "700": { "value": "#2F3342", "type": "color", "description": "Fundos escuros" },
+        "600": { "value": "#3B4052", "type": "color" },
+        "500": { "value": "#464A5F", "type": "color", "description": "Apoio institucional" },
+        "400": { "value": "#7C869A", "type": "color" },
+        "300": { "value": "#AEB7C7", "type": "color" }
+      },
+      "neutrals": {
+        "bg": { "value": "#000000", "type": "color", "description": "Fundo principal escuro" },
+        "900": { "value": "#0A0B0D", "type": "color" },
+        "800": { "value": "#1F232B", "type": "color", "description": "Superfícies" },
+        "700": { "value": "#3A3F4A", "type": "color", "description": "Bordas escuras" },
+        "500": { "value": "#6F7684", "type": "color", "description": "Texto secundário" },
+        "400": { "value": "#A1A7B3", "type": "color", "description": "Texto auxiliar" },
+        "50": { "value": "#FAFAFA", "type": "color", "description": "Texto primário" }
+      },
+      "semantic": {
+        "success": { "value": "#2E9E6F", "type": "color", "description": "Desempenho Positivo / Concluído" },
+        "warning": { "value": "#D9A441", "type": "color", "description": "Atenção Requerida / Divergência" },
+        "error": { "value": "#C94B5E", "type": "color", "description": "Crítico / Falha" }
+      },
+      "dataviz": {
+        "series-1": { "value": "#F2829B", "type": "color", "description": "Primária (Rose)" },
+        "series-2": { "value": "#8B5CF6", "type": "color", "description": "Secundária (Violet)" },
+        "series-3": { "value": "#06B6D4", "type": "color", "description": "Terciária (Cyan)" },
+        "series-4": { "value": "#F59E0B", "type": "color", "description": "Quaternária (Amber)" },
+        "series-5": { "value": "#10B981", "type": "color", "description": "Quinária (Emerald)" },
+        "series-6": { "value": "#3B82F6", "type": "color", "description": "Senária (Blue)" },
+        "control": { "value": "#464A5F", "type": "color", "description": "Grupo Controle (Dark Slate)" }
+      }
+    },
+    "typography": {
+      "font-families": {
+        "display": { "value": "'Montserrat', sans-serif", "type": "fontFamily" },
+        "body": { "value": "'Inter', sans-serif", "type": "fontFamily" },
+        "mono": { "value": "monospace", "type": "fontFamily" }
+      },
+      "headings": {
+        "h1": {
+          "family": "{typography.font-families.display.value}",
+          "size": "56px",
+          "weight": "700",
+          "line-height": "1.1"
+        },
+        "h2": {
+          "family": "{typography.font-families.display.value}",
+          "size": "40px",
+          "weight": "700",
+          "line-height": "1.15"
+        },
+        "h3": {
+          "family": "{typography.font-families.display.value}",
+          "size": "32px",
+          "weight": "600",
+          "line-height": "1.2"
+        },
+        "h4": {
+          "family": "{typography.font-families.display.value}",
+          "size": "24px",
+          "weight": "600",
+          "line-height": "1.25"
+        },
+        "h5": {
+          "family": "{typography.font-families.display.value}",
+          "size": "20px",
+          "weight": "600",
+          "line-height": "1.3",
+          "text-transform": "uppercase",
+          "letter-spacing": "0.1em"
+        }
+      },
+      "body": {
+        "large": {
+          "family": "{typography.font-families.body.value}",
+          "size": "18px",
+          "weight": "400",
+          "line-height": "1.7"
+        },
+        "default": {
+          "family": "{typography.font-families.body.value}",
+          "size": "16px",
+          "weight": "400",
+          "line-height": "1.6"
+        },
+        "small-ui": {
+          "family": "{typography.font-families.body.value}",
+          "size": "13px",
+          "weight": "500",
+          "line-height": "1.4"
+        }
+      },
+      "ui": {
+        "button": {
+          "family": "{typography.font-families.body.value}",
+          "size": "14px",
+          "weight": "600",
+          "line-height": "1.2"
+        },
+        "overline": {
+          "family": "{typography.font-families.body.value}",
+          "size": "11px",
+          "weight": "600",
+          "line-height": "1.4",
+          "text-transform": "uppercase",
+          "letter-spacing": "0.1em"
+        }
+      }
+    },
+    "effects": {
+      "glow-brand": {
+        "default": {
+          "value": "0 0 0 1px rgba(242,130,155,0.18), 0 8px 24px rgba(242,130,155,0.12)",
+          "type": "boxShadow"
+        },
+        "hover": {
+          "value": "0 0 0 1px rgba(242,130,155,0.3), 0 12px 32px rgba(242,130,155,0.2)",
+          "type": "boxShadow"
+        }
+      }
+    }
+  }
+}

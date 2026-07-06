@@ -1,0 +1,120 @@
+# ⚠ LEGADO — NÃO USAR na topologia atual do ecossistema GennomX.
+#
+# Este compose publica Caddy diretamente em 80:80/443:443 para um domínio próprio
+# (api.gennomx.ai). Desde D-011 (workspace raiz, project_state/DECISIONS.md), o
+# GennomX AI passou a viver sob gennomx.com: hub admin.gennomx.com/ai, API via
+# admin.gennomx.com/api/ai, MCP em mcp.gennomx.com — atrás do Traefik já
+# compartilhado com outro projeto na VPS de produção (F-006, project_state/FINDINGS.md
+# da raiz). Subir este compose nessa VPS disputaria as portas 80/443 do Traefik.
+#
+# `make prod-up` recusa rodar este arquivo sem `ACKNOWLEDGE_LEGACY_TOPOLOGY=yes`
+# (ver Makefile). Uso legítimo apenas em ambiente isolado, sem Traefik/gennomx.com
+# compartilhado. Ver docs/09_DEPLOY_E_OPERACAO.md para o estado atual da F4.
+services:
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    image: gennomx-api:0.1.0
+    env_file:
+      - ../.env
+    environment:
+      ENVIRONMENT: production
+    expose:
+      - "8000"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  worker:
+    image: gennomx-api:0.1.0
+    env_file:
+      - ../.env
+    environment:
+      ENVIRONMENT: production
+    command: ["celery", "-A", "workers.celery_app", "worker", "--loglevel=info", "-Q", "ingest,process,ai"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  beat:
+    image: gennomx-api:0.1.0
+    env_file:
+      - ../.env
+    environment:
+      ENVIRONMENT: production
+    command: ["celery", "-A", "workers.celery_app", "beat", "--loglevel=info"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  redis:
+    image: redis:7.4.5-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command:
+      - sh
+      - -c
+      - >
+        exec redis-server
+        --port 0
+        --tls-port 6379
+        --tls-cert-file /run/secrets/redis/redis.crt
+        --tls-key-file /run/secrets/redis/redis.key
+        --tls-ca-cert-file /run/secrets/redis/ca.crt
+        --appendonly yes
+        --requirepass "$$REDIS_PASSWORD"
+    volumes:
+      - redis_data:/data
+      - ../secrets/redis:/run/secrets/redis:ro
+    expose:
+      - "6379"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "redis-cli --tls --cert /run/secrets/redis/redis.crt --key /run/secrets/redis/redis.key --cacert /run/secrets/redis/ca.crt -a \"$$REDIS_PASSWORD\" ping | grep PONG",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  caddy:
+    image: caddy:2.10.2-alpine
+    environment:
+      API_DOMAIN: ${API_DOMAIN:?Set API_DOMAIN}
+      TLS_ADMIN_EMAIL: ${TLS_ADMIN_EMAIL:?Set TLS_ADMIN_EMAIL}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  default:
+    name: gennomx-prod-network
