@@ -33,9 +33,7 @@ services:
       - gennomx_ai_app
 
   worker:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/mvsscarmo-max/gennomx-ai-backend:latest
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
@@ -80,9 +78,7 @@ services:
       - gennomx-ai-postgres-ready-private
 
   beat:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
+    image: ghcr.io/mvsscarmo-max/gennomx-ai-backend:latest
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
