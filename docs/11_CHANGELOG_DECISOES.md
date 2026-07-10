@@ -1,4 +1,202 @@
+## 2026-07-09 - Cutover VPS autorizado para ingestão + plano operacional + compose de deploy da aplicação
+
+**Area:** Banco de dados / Infraestrutura / Ingestão / Operação
+
+**Decisão:** Marcus autorizou o cutover do banco principal para o PostgreSQL da VPS (`gennomx-ai-postgres-ready`) para fins de ingestão e operacionalização do data warehouse proprietário. A ingestão recorrente deve acontecer contra a VPS, não mais contra a Supabase. Supabase Auth/JWKS e Supabase Storage permanecem ativos nesta fase.
+
+**Implementação:** nesta sessão foi produzido o plano operacional de ingestão recorrente (`project_state/plano_ingestao_fase_operacional.md`) baseado no estado real do código, e o compose de deploy da aplicação na VPS (`infra/docker-compose.vps-app.yml`) que sobe Redis + worker + beat (+ API sob profile `api`) conectados à rede Docker interna `gennomx-ai-postgres-ready-private` do Postgres, sem publicar portas no host. O diagnóstico confirmou que os 6 conectores P1 já estão implementados, registrados no `handshake.py`, com tasks Celery e `beat_schedule` existentes; o backlog é majoritariamente operacional (deploy/env/rede/Redis/Storage Supabase), não de implementação de conectores. Lacunas P1 mapeadas para a Onda 2: parser granular de `endpoints`/`trial_results`/`adverse_events` a partir de CT.gov `resultsSection`; ANVISA; normalizador de indicações; entity resolution de empresas; PMC full-text.
+
+**Validação:** teste unitário estendido em `backend/tests/unit/test_postgres_vps_artifacts.py` aprovado (trava contratos do novo compose: sem `ports`, rede externa do Postgres, rede interna app, `--concurrency=1` no worker, `beat` command, API sob profile `api`). Probe efêmero `gennomx-ai-net-probe` confirmou resolução DNS do host `gennomx-ai-postgres-ready-postgres-1` na rede interna antes de ser removido.
+
+**Segurança:** nenhuma porta publica 5432 ou 8000 publicamente; roles `gennomx_app`/`gennomx_worker`/`gennomx_migrator`/`gennomx_readonly` sem superuser/BYPASSRLS; Supabase Auth/JWKS/Storage não removidos. Achado operacional: `docker compose config` interpolou `.env` local e expôs segredos no stdout durante validação de sintaxe — valores não registrados em arquivo; recomenda-se preferir `docker compose config --no-interpolate` ou validação por teste unitário, e avaliar rotação das chaves expostas antes de produção.
+
+**Estado:** plano + artefatos de deploy prontos; execução efetiva do runbook (copiar código para a VPS, `.env` staging, handshake, smoke-run incremental, up beat, monitorar 24-72h) pendente em ambiente com rede de saída e SSH à VPS. Cutover produtivo com `ENVIRONMENT=production` (exige `rediss://` e validações de `config.py`) fica após a primeira rodada em staging validada.
+
+---
+
+## 2026-07-09 - Inventário real Supabase via MCP e decisão de dispensar pg_dump/restore em staging (segunda sessão)
+
+**Area:** Banco de dados / Infraestrutura / Operação
+
+**Implementação:** nesta sessão o namespace Supabase tornou-se disponível. Projeto `qfanrziwepkqkgtvfrdt` foi restaurado de `INACTIVE` para `ACTIVE_HEALTHY` e o inventário real foi coletado via `supabase_execute_sql` (read-only):
+
+- PostgreSQL `17.6`; banco 12 MB.
+- `alembic_version = 0005` (alvo VPS em `0006`).
+- Extensões: `pg_trgm=1.6`, `pgcrypto=1.3`, `uuid-ossp=1.1`, `vector=0.8.0` (alvo 0.8.1), `pg_stat_statements=1.11`, `supabase_vault=0.3.1`, `plpgsql=1.0`.
+- 28 tabelas em `public`; 27 com RLS; 60 policies. Todas as 28 owners são `gennomx_migrator`.
+- Roles gennomx_* com `rolsuper=false`/`rolbypassrls=false` confirmadas.
+- Schemas/roles Supabase-specific identificados a NÃO migrar: schemas `auth`, `graphql`, `graphql_public`, `realtime`, `storage`, `vault`, `extensions`; roles `anon`, `authenticated`, `service_role` (BYPASSRLS), `supabase_admin` (superuser/BYPASSRLS), `supabase_auth_admin`, `supabase_storage_admin`.
+- Contagens críticas: `data_sources=8` (todas `connector_status=inactive`, `is_enabled=false`, `last_successful_run=NULL`, `last_failed_run=NULL`); `retention_policies=5`; demais 26 tabelas = 0 registros.
+
+**Decisão operacional:** `pg_dump --data-only`/`pg_restore` fica **dispensável** em staging porque o banco Supabase contém apenas seeds de `data_sources`/`retention_policies` já reproduzidos no alvo pelas próprias migrações Alembic (`0001` + `0004`, ambas com `ON CONFLICT DO NOTHING`). Persistir em `pg_dump` acrescentaria risco operacional (URL direta Supabase com DNS falho localmente, manipulação de credenciais) sem benefício. O alvo VPS em `0006` já contém funcionalmente o mesmo estado de dados; a comparação é conceitual e dispensa `tools/compare_postgres_migration.py`.
+
+**Limitações:** UUIDs de `data_sources` diferem entre origem e alvo (aleatórios por execução da migração); irrelevante porque o app referencia por `slug`. Validação da aplicação (backend/pytest) contra VPS DB não foi executada nesta sessão — VPS Postgres em rede Docker interna (`gennomx-ai-postgres-ready-private`) não é alcançável desta máquina; exigirá backend em staging on-VPS ou VPN/tunnel.
+
+**Segurança:** nenhuma remoção de Supabase Auth/JWKS/Storage, nenhum uso de `postgres`/service_role/superuser como conexão de aplicação, nenhuma exposição pública de 5432, nenhum relaxamento de RLS. `VPS_getProjectContents` não foi inspecionada para evitar expor credenciais nesta sessão. Inventário não persistido em artefato `supabase-inventory.json`.
+
+**Estado:** staging de dados conceitualmente concluído pela paridade de seeds; cutover produtivo permanece não executado, dependente de validação on-VPS e aprovação explícita do Marcus.
+
+---
+
+## 2026-07-09 - MCP Supabase corrigido via OAuth
+
+**Area:** Operacao / Ferramentas / Banco de dados
+
+**Implementacao:** corrigida a configuracao local do MCP Supabase para continuidade da migracao banco-only. No Codex, `codex mcp login supabase` concluiu via OAuth e a entrada `supabase` deixou de depender de `SUPABASE_ACCESS_TOKEN`, passando a `auth_status=o_auth`. No OpenCode, a entrada ativa foi trocada de `mcp-server-supabase` local sem token para o MCP remoto oficial e `opencode mcp auth supabase` concluiu.
+
+**Validacao:** `codex mcp list --json` mostra `supabase` com OAuth e sem `bearer_token_env_var`; `opencode mcp auth list` mostra `supabase authenticated`; `opencode mcp list` mostra `supabase connected`.
+
+**Limite remanescente:** a sessao atual do agente nao injeta ferramentas MCP novas dinamicamente. O inventario real Supabase deve ser retomado em nova sessao Codex/OpenCode ja carregada com o namespace Supabase. A URL direta Supabase local continua indisponivel; nao executar dump/restore nem cutover produtivo sem inventario/validacao segura.
+
+---
+
+## 2026-07-09 - Alembic head aplicado no PostgreSQL VPS staging
+
+**Area:** Banco de dados / Infraestrutura / Segurança / Operação
+
+**Implementação:** aplicado Alembic `head` no PostgreSQL VPS staging `gennomx-ai-postgres-ready` sem publicar `5432`. Como a API Hostinger limita `content`/`environment` a 8192 caracteres e não há imagem/remote do backend, o SQL offline Alembic foi compactado, dividido em dois chunks e executado por projeto Docker temporário conectado à rede interna `gennomx-ai-postgres-ready-private`.
+
+**Validação:** alvo em `alembic_version=0006`; extensões `pg_trgm=1.6`, `pgcrypto=1.3`, `uuid-ossp=1.1`, `vector=0.8.1`; roles `gennomx_app`, `gennomx_migrator`, `gennomx_readonly`, `gennomx_worker` com `rolsuper=false` e `rolbypassrls=false`; 27 tabelas com RLS; 60 policies; 29 tabelas públicas; `data_sources=8`. Grants pós-migração foram reaplicados, incluindo inserts de auditoria para `gennomx_app`.
+
+**Bloqueio remanescente:** inventário real Supabase, dump/restore staging e comparação origem/alvo não foram executados nesta rodada. O MCP Supabase foi corrigido/autenticado posteriormente via OAuth, mas exige nova sessão para carregar ferramentas; a URL direta Supabase local falhou DNS e o pooler configurado rejeitou role/tenant.
+
+**Segurança:** nenhuma remoção de Supabase Auth/JWKS/Storage, nenhuma mudança no frontend, nenhuma exposição pública de PostgreSQL, nenhum uso de `postgres`/superuser como conexão de aplicação e nenhum relaxamento de RLS. A inspeção Hostinger revelou que `getProjectContents` retorna variáveis de ambiente sensíveis; respostas dessa API devem ser tratadas como sensíveis e rotação deve ser avaliada antes de produção.
+
+**Status:** schema staging em head; migração de dados bloqueada por acesso Supabase.
+
+---
+
+## 2026-07-09 - Limpeza VPS e bloqueio operacional do Alembic staging
+
+**Area:** Banco de dados / Infraestrutura / Segurança / Operação
+
+**Implementação:** após aprovação explícita, removidos os projetos intermediários de bootstrap e o projeto legado `postgresql-spko` da VPS. A listagem final da VPS mantém apenas `gennomx-ai-postgres-ready` e `traefik`; o banco staging final continua `healthy`, com bootstrap concluído e sem porta PostgreSQL publicada.
+
+**Bloqueio:** Alembic `head` ainda não foi aplicado ao alvo. Foi gerado SQL offline localmente, mas a tentativa de aplicar via job temporário Hostinger esbarrou no limite de 8192 caracteres do campo `environment`. Sem remoto Git configurado e sem imagem publicada do backend/migrations, falta um caminho reprodutível para executar `alembic upgrade head` dentro da rede Docker interna.
+
+**Supabase:** o MCP Supabase global ainda não aparece na sessão atual; a mudança de configuração requer reinício do OpenCode. Inventário real, dump/restore e comparação seguem pendentes.
+
+**Status:** limpeza/provisionamento concluídos; migrations e migração de dados pendentes.
+
+---
+
+## 2026-07-09 - Provisionamento staging PostgreSQL/pgvector na Hostinger VPS
+
+**Area:** Banco de dados / Infraestrutura / Seguranca / Operacao
+
+**Implementacao:** via MCP Hostinger VPS, criada a primeira stack staging funcional de PostgreSQL/pgvector para a migração banco-only. A stack final válida é `gennomx-ai-postgres-ready`, rodando em rede Docker interna, sem porta publicada, com TLS interno e bootstrap concluído de extensões/roles.
+
+**Seguranca:** criado firewall Hostinger `gennomx-ai-vps-public-ingress` (`325948`) e associado à VPS `1817951`, permitindo entrada somente em SSH/22, HTTP/80, HTTPS/443 e ICMP. Isso mitiga um achado crítico: projeto pré-existente `postgresql-spko` publicava PostgreSQL no host (`0.0.0.0:32768`/IPv6).
+
+**Incidente:** tentativas intermediárias de bootstrap registraram senhas de tentativa em logs por erro de quoting SQL. Essas senhas foram descartadas/rotacionadas e não correspondem à stack final. Os projetos intermediários devem ser parados/removidos após confirmação; logs antigos devem ser tratados como sensíveis.
+
+**Nao executado:** inventário real Supabase, dump/restore, Alembic no alvo e cutover produtivo. O MCP Supabase não apareceu como ferramenta/recurso disponível nesta sessão.
+
+**Status:** Staging de banco provisionado; migração de dados e validação de aplicação pendentes.
+
+---
+
+## 2026-07-09 - Hardening dos artefatos PostgreSQL VPS para staging
+
+**Area:** Banco de dados / Infraestrutura / Seguranca / Operacao
+
+**Implementacao:** reforcada a preparacao banco-only sem executar deploy, restore ou cutover. O bootstrap de roles na VPS passa a ser seguro para reexecucao e rotacao de senhas, usa o banco conectado (`current_database()`) em vez de fixar `gennomx`, e concede acesso de leitura a sequences para `gennomx_readonly`, necessario para backup/inspecao sem privilegio administrativo. O servico de backup do compose passou a exigir TLS (`PGSSLMODE=require`) com CA montada fora do Git.
+
+**Motivo:** reduzir riscos antes do primeiro ensaio em staging: evitar scripts acoplados a um nome fixo de banco, permitir rotacao operacional de senhas, manter backup em role readonly e travar contratos de rede/TLS por teste automatizado.
+
+**Arquivos/artefatos:** `infra/postgres/bootstrap_roles_vps.sql`, `infra/docker-compose.postgres-vps.yml`, `backend/tests/unit/test_postgres_vps_artifacts.py`, `docs/05_SEGURANCA_E_GOVERNANCA.md`, `docs/09_DEPLOY_E_OPERACAO.md`, `project_state/task_plan.md`, `project_state/progress.md`.
+
+**Validacao:** `py_compile` dos scripts/config/teste; `docker compose -f infra\docker-compose.postgres-vps.yml config` com senhas dummy; `pytest backend\tests\unit\test_secure_config.py backend\tests\unit\test_postgres_vps_artifacts.py -v --tb=short` -> 14 passed; `ruff check` nos arquivos relevantes -> passed.
+
+**Nao executado:** inventario real Supabase, provisionamento na Hostinger, bootstrap em banco real, Alembic no alvo, dump/restore, comparacao pos-restore e cutover produtivo.
+
+**Status:** Implementada como hardening local; staging real ainda bloqueado por credenciais/certificados/janela.
+
+---
+
+## 2026-07-09 - Preparacao da migracao banco-only para PostgreSQL VPS
+
+**Area:** Banco de dados / Infraestrutura / Seguranca / Operacao
+
+**Implementacao:** preparada a primeira camada executavel da migracao banco-only Supabase PostgreSQL -> PostgreSQL/pgvector na VPS Hostinger, mantendo Supabase Auth/JWKS e Supabase Storage temporariamente.
+
+**Arquivos/artefatos:** `backend/app/config.py` ganhou `DATABASE_PROVIDER=supabase_postgres|vps_postgres` e validação fail-closed contra URLs Supabase quando o provider for `vps_postgres`; `.env.example` passou a documentar banco VPS como alvo e Supabase DB como rollback temporario; `infra/docker-compose.postgres-vps.yml` define PostgreSQL 16 + pgvector sem porta publica 5432, rede interna, healthcheck, TLS por certificados fora do Git e volume de backup; `infra/postgres/bootstrap_roles_vps.sql` cria extensoes e roles `gennomx_app`, `gennomx_worker`, `gennomx_migrator`, `gennomx_readonly` com `NOSUPERUSER NOBYPASSRLS`; `infra/postgres/backup.sh` e `restore_check.sh` preparam backup/restore; `tools/postgres_inventory.py` e `tools/compare_postgres_migration.py` preparam inventario e validacao de restore.
+
+**Decisao de seguranca:** nao relaxar TLS nem RLS para facilitar o corte. Restore em staging/producao deve usar janela controlada, reaplicar grants depois de Alembic/restore e validar roles sem superuser/BYPASSRLS. Porta 5432 nao deve ser exposta publicamente.
+
+**Nao executado:** nenhum provisionamento real na Hostinger, dump do Supabase, restore, Alembic no alvo, teste contra banco VPS ou cutover produtivo. Esses passos exigem credenciais/URLs reais, certificados TLS do Postgres, backup final e aprovacao operacional explicita.
+
+**Status:** Preparado em codigo/documentacao; cutover aguardando janela e aprovacao.
+
+---
 # 11 — Changelog de Decisões
+
+## 2026-07-09 - Decisao: migrar PostgreSQL Supabase para PostgreSQL na VPS
+
+**Area:** Banco de dados / Infraestrutura / Seguranca / Operacao
+
+**Decisao:** substituir o PostgreSQL hospedado da Supabase por PostgreSQL/pgvector hospedado diretamente na VPS da GennomX como banco principal da GennomX AI. A migracao sera faseada: primeiro banco, mantendo Supabase Auth/JWKS e Supabase Storage temporariamente; depois, se desejado, migrar Auth e Storage em planos separados.
+
+**Motivo:** Marcus decidiu centralizar a infraestrutura de banco de dados na VPS. A mudanca reduz dependencia do PostgreSQL gerenciado da Supabase, mas exige assumir backup, restore, seguranca, TLS, roles, RLS, monitoramento e disponibilidade do banco.
+
+**Racional tecnico:** hoje Supabase cumpre tres papeis diferentes: PostgreSQL, Auth/JWKS e Storage de raw payload. Migrar os tres simultaneamente aumentaria muito o risco operacional. O corte seguro e migrar somente o banco primeiro, preservando login e raw storage ate substitutos estarem implementados e testados.
+
+**Impacto:** `DATABASE_URL`, `WORKER_DATABASE_URL` e `DATABASE_URL_SYNC` passarao a apontar para PostgreSQL/pgvector na VPS; roles `gennomx_app`, `gennomx_worker`, `gennomx_migrator` e `gennomx_readonly` continuam obrigatorias com `NOSUPERUSER NOBYPASSRLS`; porta 5432 nao deve ser exposta publicamente; backups e restore passam a ser responsabilidade operacional da GennomX. Supabase Auth/Storage permanecem temporarios na primeira fase.
+
+**Plano canonico:** `project_state/plano_migracao_supabase_postgres_vps.md`.
+
+**Status:** Planejado; cutover real exige aprovacao operacional explicita, backup final, restore validado e janela de manutencao.
+
+---
+
+## 2026-07-09 - Plano aprovado: data warehouse e ingestao recorrente
+
+**Area:** Dados / Ingestao / Data warehouse / MCP / Operacao
+
+**Decisao:** iniciar a construcao operacional do banco/data warehouse da GennomX AI por ondas, partindo do estado real ja implementado e nao de uma arquitetura greenfield. As primeiras quatro etapas aprovadas sao: (1) diagnostico e inventario real do banco/conectores/jobs/MCP/ambiente; (2) ativacao controlada dos conectores existentes com handshake, dry-run/execucao limitada e validacao de idempotencia; (3) camada inicial de qualidade/cobertura do warehouse; (4) primeiro incremento seguro de granularidade clinica para endpoints, resultados e safety.
+
+**Motivo:** o projeto ja possui schema Supabase/PostgreSQL, conectores `clinicaltrials_gov`, `pubmed`, `openfda`, `dailymed`, `open_targets` e `ema`, Celery/Redis, raw storage, `SourceDocument`, `EvidenceSnippet`, MCP read-only e dashboard. A proxima etapa de valor nao e redesenhar a base, mas operacionalizar ingestao real recorrente, medir cobertura, explicitar lacunas e expandir o banco com qualidade auditavel.
+
+**Cadencia alvo:** backbone diario para ClinicalTrials.gov, PubMed, openFDA, DailyMed e freshness; backbone semanal para Open Targets, EMA, retencao e qualidade/cobertura. Fontes event-driven ou mais ruidosas (ANVISA, PMC full-text, congressos, press releases, investor decks) ficam fora da primeira rodada e entram em ondas posteriores conforme contrato VLAEG, compliance e prioridade.
+
+**Qualidade esperada:** evoluir cada dado por niveis: raw preservado -> parseado -> normalizado -> canonico com evidencia -> enriquecido/conectado -> curado/confiavel. Ferramentas MCP devem retornar evidencias, lacunas, freshness e limites, sem prometer cobertura inexistente.
+
+**Documentos afetados:** `project_state/plano_data_warehouse_ingestao.md`, `project_state/prompt_implementacao_dw_etapas_1_4.md`, `project_state/task_plan.md`, `project_state/progress.md`, `docs/11_CHANGELOG_DECISOES.md`.
+
+**Status:** Plano aprovado; implementacao das etapas 1-4 delegada ao proximo agente.
+
+---
+
+## 2026-07-08 — F4 em andamento: GennomX AI sob `gennomx.com`
+
+**Área:** Frontend / API / Auth / Operação
+
+**Decisão:** alinhar o GennomX AI ao contrato vigente de `gennomx.com`, com frontend em
+`admin.gennomx.com/ai`, API em `admin.gennomx.com/api/ai` e MCP em `mcp.gennomx.com`, mantendo o
+compose legado como histórico.
+
+**Implementação:**
+- `frontend/next.config.ts`: `basePath` via `NEXT_PUBLIC_BASE_PATH` e export do valor para o client.
+- `frontend/src/lib/base-path.ts`: helper `withBasePath(...)` para redirects e navegação client-side.
+- `frontend/src/lib/api-base.ts`: join seguro de `NEXT_PUBLIC_API_URL` com paths relativos.
+- `frontend/src/lib/api.ts` / `frontend/src/lib/api-server.ts`: chamadas agora usam paths relativos
+  (`api/v1/...`, `health`) via `apiUrl(...)`.
+- `frontend/src/middleware.ts`: redirects de login e de root respeitam o `basePath`.
+- `frontend/src/app/login/page.tsx` e `frontend/src/components/layout/header.tsx`: navegação com
+  `withBasePath(...)`.
+- `frontend/scripts/check-base-path.mjs`: guard estático para evitar novos caminhos absolutos.
+- `backend/app/config.py` / `backend/app/main.py`: `ROOT_PATH=/api/ai` e `API_ALLOWED_HOSTS` passam
+  a refletir a topologia ativa.
+- `.env.example`: documenta `NEXT_PUBLIC_BASE_PATH=/ai`, `ROOT_PATH=/api/ai`, `API_ALLOWED_HOSTS`
+  e os hosts `admin.gennomx.com` / `mcp.gennomx.com`.
+
+**Motivo:** eliminar o acoplamento ao host antigo (`api.gennomx.ai`) e manter frontend, backend e
+redirects coerentes quando a app estiver atrás do hub admin.
+
+**Validação pendente:** `npm run lint`, `npm run typecheck`, `npm run build`, `npm run check:base-path`
+e a suíte backend correspondente.
+
+**Status:** em andamento.
 
 ## 2026-07-02 — Revisão técnica sênior: dashboard, governança e débito técnico de CI
 
@@ -866,3 +1064,5 @@ Após a adoção do VLAEG, os históricos sucedidos permaneciam espalhados na ra
 - Links externos ou anotações pessoais apontando para os caminhos antigos quebram; mitigado por o repositório ainda não ter commits publicados e pelas referências internas terem sido todas atualizadas (verificado por busca global).
 
 **Status:** Implementada.
+
+

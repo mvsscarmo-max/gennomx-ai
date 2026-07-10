@@ -3,6 +3,7 @@
 import { Bell, Menu, Search } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { withBasePath } from "@/lib/base-path";
 
 interface HeaderProps {
   title?: string;
@@ -16,7 +17,7 @@ export function Header({ title, onMenuClick }: HeaderProps) {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      router.push(`/assets?q=${encodeURIComponent(query.trim())}`);
+      router.push(withBasePath(`/assets?q=${encodeURIComponent(query.trim())}`));
     }
   };
 

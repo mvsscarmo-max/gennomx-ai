@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
+    "check:base-path": "node scripts/check-base-path.mjs",
     "test:e2e": "playwright test",
     "test:e2e:report": "playwright show-report"
   },

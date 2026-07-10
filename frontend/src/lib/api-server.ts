@@ -8,8 +8,7 @@ import type {
   PaginatedResponse,
 } from "./types";
 import { getServerAccessToken } from "./supabase-server";
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiUrl } from "./api-base";
 
 async function serverApiFetch<T>(path: string): Promise<T> {
   let accessToken = await getServerAccessToken();
@@ -17,7 +16,7 @@ async function serverApiFetch<T>(path: string): Promise<T> {
     accessToken = process.env.API_INTERNAL_KEY;
   }
   if (!accessToken) throw new Error("Authenticated server session required");
-  const response = await fetch(`${BASE}${path}`, {
+  const response = await fetch(apiUrl(path), {
     cache: "no-store",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
   });
@@ -27,15 +26,15 @@ async function serverApiFetch<T>(path: string): Promise<T> {
 
 export const serverAssetsApi = {
   detail: (id: string) =>
-    serverApiFetch<{ success: boolean; data: DrugAssetDetail }>(`/api/v1/assets/${id}`),
+    serverApiFetch<{ success: boolean; data: DrugAssetDetail }>(`api/v1/assets/${id}`),
 };
 export const serverSourcesApi = {
-  list: () => serverApiFetch<PaginatedResponse<DataSourceSummary>>("/api/v1/sources"),
+  list: () => serverApiFetch<PaginatedResponse<DataSourceSummary>>("api/v1/sources"),
 };
 export const serverJobsApi = {
-  list: () => serverApiFetch<PaginatedResponse<IngestionJobSummary>>("/api/v1/jobs"),
+  list: () => serverApiFetch<PaginatedResponse<IngestionJobSummary>>("api/v1/jobs"),
 };
 export const fetchServerOverviewStats = () =>
-  serverApiFetch<{ success: boolean; data: OverviewStats }>("/api/v1/overview").then(
+  serverApiFetch<{ success: boolean; data: OverviewStats }>("api/v1/overview").then(
     (response) => response.data,
   );

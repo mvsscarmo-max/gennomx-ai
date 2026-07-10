@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { withBasePath } from "@/lib/base-path";
 
 type CookieUpdate = {
   name: string;
@@ -23,7 +24,7 @@ export async function middleware(request: NextRequest) {
   let response = NextResponse.next({ request });
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) return NextResponse.redirect(new URL("/login", request.url));
+  if (!url || !key) return NextResponse.redirect(new URL(withBasePath("/login"), request.url));
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
@@ -35,11 +36,11 @@ export async function middleware(request: NextRequest) {
     },
   });
   const { data } = await supabase.auth.getUser();
-  if (!data.user) return NextResponse.redirect(new URL("/login", request.url));
+  if (!data.user) return NextResponse.redirect(new URL(withBasePath("/login"), request.url));
 
   const role = data.user.app_metadata?.gennomx_role ?? "readonly";
   if (role !== "admin" && isAdminOnlyPath(request.nextUrl.pathname)) {
-    return NextResponse.redirect(new URL("/", request.url));
+    return NextResponse.redirect(new URL(withBasePath("/"), request.url));
   }
 
   return response;

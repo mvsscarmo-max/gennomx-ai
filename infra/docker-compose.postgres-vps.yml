@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: pgvector/pgvector:0.8.1-pg16
+    container_name: gennomx-ai-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-gennomx}
+      POSTGRES_USER: ${POSTGRES_ADMIN_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_ADMIN_PASSWORD:?Set POSTGRES_ADMIN_PASSWORD outside the repository}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    expose:
+      - "5432"
+    volumes:
+      - gennomx_ai_postgres_data:/var/lib/postgresql/data
+      - gennomx_ai_postgres_backups:/backups
+      - ./secrets/postgres:/run/secrets/postgres:ro
+    command:
+      - "postgres"
+      - "-c"
+      - "ssl=on"
+      - "-c"
+      - "ssl_cert_file=/run/secrets/postgres/server.crt"
+      - "-c"
+      - "ssl_key_file=/run/secrets/postgres/server.key"
+      - "-c"
+      - "ssl_ca_file=/run/secrets/postgres/ca.crt"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_private
+
+  backup:
+    image: postgres:16-alpine
+    profiles:
+      - backup
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: ${GENNOMX_BACKUP_PASSWORD:?Set GENNOMX_BACKUP_PASSWORD outside the repository}
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGDATABASE: ${POSTGRES_DB:-gennomx}
+      PGUSER: gennomx_readonly
+      PGSSLMODE: require
+      PGSSLROOTCERT: /run/secrets/postgres/ca.crt
+      BACKUP_RETENTION_DAYS: ${BACKUP_RETENTION_DAYS:-14}
+    volumes:
+      - gennomx_ai_postgres_backups:/backups
+      - ./secrets/postgres:/run/secrets/postgres:ro
+      - ./postgres/backup.sh:/usr/local/bin/gennomx-backup.sh:ro
+    command: ["/bin/sh", "/usr/local/bin/gennomx-backup.sh"]
+    networks:
+      - gennomx_ai_private
+
+volumes:
+  gennomx_ai_postgres_data:
+  gennomx_ai_postgres_backups:
+
+networks:
+  gennomx_ai_private:
+    name: gennomx-ai-private
+    internal: true

@@ -26,6 +26,7 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT == "development"
 
     # ── Database ─────────────────────────────────────────────────────────────
+    DATABASE_PROVIDER: Literal["supabase_postgres", "vps_postgres"] = "supabase_postgres"
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/gennomx"
     WORKER_DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/gennomx"
     DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@localhost:5432/gennomx"
@@ -55,6 +56,7 @@ class Settings(BaseSettings):
     API_ALGORITHM: str = "HS256"
     API_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     API_INTERNAL_KEY: str = ""
+    ROOT_PATH: str = ""
     SUPABASE_JWT_AUDIENCE: str = "authenticated"
     SUPABASE_JWT_ISSUER: str = ""
     SUPABASE_JWKS_URL: str = ""
@@ -89,6 +91,10 @@ class Settings(BaseSettings):
     @property
     def llm_network_enabled(self) -> bool:
         return self.LLM_ENABLE_NETWORK_CALLS and self.ENVIRONMENT != "development"
+
+    @property
+    def root_path(self) -> str:
+        return self.ROOT_PATH
 
     # ── Legacy LiteLLM (deprecated; kept for reference only) ─────────────────
     LITELLM_MODEL_PREMIUM: str = ""
@@ -152,7 +158,7 @@ class Settings(BaseSettings):
     # ── CORS ──────────────────────────────────────────────────────────────────
     CORS_ORIGINS: str = "http://localhost:3000"
     CORS_ALLOW_CREDENTIALS: bool = True
-    API_ALLOWED_HOSTS: str = "api.gennomx.ai,*.gennomx.ai"
+    API_ALLOWED_HOSTS: str = "admin.gennomx.com,mcp.gennomx.com"
 
     @field_validator("CORS_ORIGINS", "API_ALLOWED_HOSTS", mode="before")
     @classmethod
@@ -180,6 +186,7 @@ class Settings(BaseSettings):
             "CELERY_RESULT_BACKEND": self.CELERY_RESULT_BACKEND,
             "SUPABASE_URL": self.SUPABASE_URL,
             "API_INTERNAL_KEY": self.API_INTERNAL_KEY,
+            "ROOT_PATH": self.ROOT_PATH,
             "MCP_TOKEN_CHATGPT": self.MCP_TOKEN_CHATGPT,
             "SUPABASE_SERVICE_ROLE_KEY": self.SUPABASE_SERVICE_ROLE_KEY,
         }
@@ -202,6 +209,8 @@ class Settings(BaseSettings):
             raise ValueError("Production API_ALLOWED_HOSTS must contain at least one host")
         if any(host == "*" or "localhost" in host for host in self.api_allowed_hosts_list):
             raise ValueError("Production API_ALLOWED_HOSTS must contain explicit non-local hosts")
+        if self.ROOT_PATH != "/api/ai":
+            raise ValueError("Production ROOT_PATH must be /api/ai")
         infrastructure_urls = (
             self.DATABASE_URL,
             self.DATABASE_URL_SYNC,
@@ -228,6 +237,18 @@ class Settings(BaseSettings):
             username = (urlsplit(getattr(self, name)).username or "").split(".", 1)[0]
             if username != expected_role:
                 raise ValueError(f"Production {name} must use database role {expected_role}")
+        database_urls = (
+            self.DATABASE_URL,
+            self.WORKER_DATABASE_URL,
+            self.DATABASE_URL_SYNC,
+        )
+        if self.DATABASE_PROVIDER == "vps_postgres" and any(
+            "supabase.co" in url or "pooler.supabase.com" in url for url in database_urls
+        ):
+            raise ValueError(
+                "DATABASE_PROVIDER=vps_postgres requires DATABASE_URL, "
+                "WORKER_DATABASE_URL and DATABASE_URL_SYNC to target the VPS PostgreSQL"
+            )
         for name, url in (
             ("REDIS_URL", self.REDIS_URL),
             ("CELERY_BROKER_URL", self.CELERY_BROKER_URL),

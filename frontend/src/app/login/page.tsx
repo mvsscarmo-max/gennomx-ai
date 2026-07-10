@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { withBasePath } from "@/lib/base-path";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function LoginPage() {
     });
     setLoading(false);
     if (authError) return setError("Credenciais inválidas ou acesso não autorizado.");
-    router.replace("/");
+    router.replace(withBasePath("/"));
     router.refresh();
   }
 

@@ -1,5 +1,108 @@
 # project_state / task_plan.md — GennomX AI
 
+## Ingestao recorrente e data warehouse proprietario - plano aprovado 2026-07-09 (cutover VPS autorizado)
+
+Marcus autorizou o cutover para fins de ingestao/operacionalizacao: a ingestao deve acontecer contra o PostgreSQL da VPS, nao mais contra a Supabase (Auth/JWKS/Storage permanecem ativos). Plano canonico: `project_state/plano_ingestao_fase_operacional.md`.
+
+### Etapas planejadas
+
+| Etapa | Escopo | Estado |
+|---|---|---|
+| INGEST-0 | Diagnostico real do codigo (conectores, tasks, beat, persistencia, storage, entidades) | Concluida 2026-07-09: 6 conectores prontos + 6 tasks + beat_schedule existente; lacunas P1 mapeadas (endpoints/resultados/AD events granulares, empresas, indicacoes, ANVISA) |
+| INGEST-1 | Plano operacional + compose de deploy da aplicacao VPS + runbook + `.env.example` + teste de contratos | Concluida 2026-07-09 nesta sessao |
+| INGEST-2 | Deploy efetivo na VPS (copiar codigo, `.env` staging, handshake, smoke-run incremental controlado) | Pendente on-VPS (exige SSH + rede de saida + Redis/Storage Supabase validados) |
+| INGEST-3 | Ativar beat recorrente e monitorar 24-72h | Pendente INGEST-2 validado |
+| INGEST-4 | Complementos ao `beat_schedule`: `link_trials_to_assets`, `deduplicate_assets`, `compute_confidence_scores` | Pendente pos-primeira-ingestao |
+| INGEST-5 | Onda 2 lacunas P1: endpoints/resultados/AD events granulares CT.gov resultsSection; ANVISA; normalizador de indicacoes; entity resolution de empresas; PMC full-text | Pendente backbone estavel |
+| INGEST-6 | Onda 3 fontes complexas: preprints, congressos, press releases, investor decks, SEC/EDGAR | Pendente Onda 2 |
+
+Orcamento operacional em `plano_ingestao_fase_operacional.md`: diagnostico, ordem racional de ingestao (backbone estruturado antes de fontes ruidosas), camadas raw/processado/curado/current/history sobre o modelo existente (ADR-001), agenda por fonte com frequencia/janela/fila/limites/retries, pre-requisitos (env/rede/gates/git/seguranca), backlog priorizado de workflows/features, riscos e mitigacao, criterios de aceite verificaveis e plano por fases pequenas com comandos e rollback.
+
+---
+
+## Migracao do banco Supabase PostgreSQL para PostgreSQL na VPS - plano 2026-07-09
+
+Marcus decidiu substituir o PostgreSQL hospedado da Supabase por PostgreSQL/pgvector hospedado diretamente na VPS. A migracao deve ser faseada: **banco primeiro**, mantendo Supabase Auth/JWKS e Supabase Storage temporariamente ate decisoes especificas posteriores.
+
+Plano canonico: `project_state/plano_migracao_supabase_postgres_vps.md`.
+
+### Etapas planejadas
+
+| Etapa | Escopo | Estado |
+|---|---|---|
+| PGVPS-0 | Confirmar escopo: migrar somente banco; manter Auth/Storage Supabase temporariamente | Concluida 2026-07-09 |
+| PGVPS-1 | Inventario do Supabase atual: versao, extensoes, `alembic_version`, contagens, grants/RLS | Concluida 2026-07-09 (segunda sessao): MCP Supabase ativo; projeto restaurado; inventario real coletado via `execute_sql` read-only. Origem: PostgreSQL 17.6, `alembic_version=0005`, `vector=0.8.0`, 28 tabelas, 27 RLS, 60 policies, 8 data_sources (todas inactive, sem ingestao), 5 retention_policies, demais 26 tabelas vazias. Schemas/roles Supabase-specific identificados para nao migrar. Banco 12 MB |
+| PGVPS-2 | Provisionar PostgreSQL/pgvector na VPS com rede privada, TLS, volume e backup | Parcialmente concluida em staging: `gennomx-ai-postgres-ready` rodando healthy, sem porta publicada, com TLS interno; backup offsite ainda pendente |
+| PGVPS-3 | Bootstrap de roles `gennomx_app`, `gennomx_worker`, `gennomx_migrator`, `gennomx_readonly` e Alembic `head` | Concluida em staging 2026-07-09: Alembic aplicado ate `0006`, grants reaplicados e roles/extensoes/RLS validados |
+| PGVPS-4 | Dump/restore em staging e validacao de contagens/checksums | Dispensavel 2026-07-09: inventario mostrou que Supabase so tem dados de seed (`data_sources`/`retention_policies`) ja semeados pelas proprias migracoes Alembic 0001/0004 com `ON CONFLICT DO NOTHING` e reproduzidos no alvo. Demais 26 tabelas vazias. `pg_dump --data-only` acrescentaria risco operacional sem beneficio. Comparacao conceitual: origem e alvo tem as mesmas seeds funcionais; alvo a frente em `0006` com `llm_call_logs`. Limitacao: UUIDs de `data_sources` diferem (aleatorios por migracao), irrelevante porque app referencia por `slug` |
+| PGVPS-5 | Testes de aplicacao contra PostgreSQL VPS mantendo Supabase Auth/Storage | Config preparada; bloqueada nesta sessao: VPS Postgres em rede Docker interna nao alcancavel desta maquina. Validar requires backend up on-VPS ou tunnel |
+| PGVPS-6 | Cutover controlado com pausa de ingestao, backup final, restore final e rollback pronto | Autorizado para fins de ingestao/operacionalizacao (2026-07-09, Marcus): ingestao contra PostgreSQL VPS. Deploy efetivo + cutover produtivo (ENVIRONMENT=production) ainda exigem runbook on-VPS validado |
+| INGEST-1 | Operacionalizar ingestao recorrente dos 6 conectores contra PostgreSQL VPS | Plano + artefatos prontos (2026-07-09): `project_state/plano_ingestao_fase_operacional.md`; `infra/docker-compose.vps-app.yml` (Redis+worker+beat+API) com teste de contratos; `.env.example` e `docs/09` runbook atualizados. Pendente on-VPS: copiar codigo, preencher `.env` staging, handshake, smoke-run, up beat |
+| PGVPS-7 | Pos-cutover: docs/env/backups/monitoramento e plano posterior para Auth/Storage | Parcial: docs/env/runbook preparados; pos-cutover real pendente |
+
+### Impacto no plano de data warehouse
+
+A ativacao produtiva pesada da ingestao recorrente deve ocorrer **depois** do cutover do banco para PostgreSQL VPS. DW-1/DW-2 podem fazer diagnostico/dry-run com cautela, mas a nova fonte de verdade deve ser a VPS antes de rodar ingestao recorrente em escala.
+
+### Registro de continuidade — 2026-07-09
+
+Rodada de hardening sem credenciais reais: `bootstrap_roles_vps.sql` agora reaplica senhas por variaveis `psql`, usa `current_database()` em vez de banco hardcoded e concede sequences a `gennomx_readonly` para backup/inspecao. `docker-compose.postgres-vps.yml` exige TLS tambem no servico `backup`. Teste unitario novo (`test_postgres_vps_artifacts.py`) trava esses contratos. Inventario real, provisionamento, restore e cutover seguem pendentes.
+
+### Registro de provisionamento VPS — 2026-07-09
+
+VPS Hostinger `1817951` recebeu firewall `gennomx-ai-vps-public-ingress` (`325948`) sincronizado, permitindo apenas SSH/HTTP/HTTPS/ICMP de entrada. Stack segura de banco `gennomx-ai-postgres-ready` foi criada e esta healthy, com `pgvector/pgvector:0.8.1-pg16`, TLS interno, rede Docker interna e sem `ports:`. Bootstrap concluiu (`Exited (0)`) com extensoes e roles dedicadas. Na continuidade aprovada, os projetos intermediarios e o legado `postgresql-spko` foram removidos. Bloqueios remanescentes apos Alembic staging: MCP Supabase nao exposto, inventario Supabase, dump/restore e comparacao.
+
+### Registro de Alembic staging — 2026-07-09
+
+Alembic `head` foi aplicado no PostgreSQL VPS staging por SQL offline compactado em dois chunks e executado por projeto Docker temporario na rede `gennomx-ai-postgres-ready-private`, sem publicar `5432`. Resultado validado: `alembic_version=0006`, extensoes `pg_trgm=1.6`, `pgcrypto=1.3`, `uuid-ossp=1.1`, `vector=0.8.1`, roles `gennomx_app`, `gennomx_migrator`, `gennomx_readonly`, `gennomx_worker` com `rolsuper=false` e `rolbypassrls=false`, 27 tabelas com RLS, 60 policies, 29 tabelas publicas e `data_sources=8`. Grants gerais e inserts de auditoria para `gennomx_app` foram reaplicados. Inventario/dump/restore Supabase e comparacao seguem bloqueados por ausencia de MCP Supabase e URL direta funcional.
+
+### Registro de inventario real Supabase via MCP — 2026-07-09 (segunda sessao)
+
+MCP Supabase esta disponivel nesta sessao. Projeto `qfanrziwepkqkgtvfrdt` estava `INACTIVE` (pausado) e foi restaurado para `ACTIVE_HEALTHY` (reversivel; Marcus pode repausar). Inventario real coletado:
+
+- PostgreSQL 17.6; banco 12 MB.
+- `alembic_version = 0005` (alvo VPS em `0006`).
+- Extensao `vector=0.8.0` (alvo em `0.8.1`); demais compativeis.
+- 28 tabelas publicas; 27 RLS; 60 policies.
+- Roles `gennomx_app`, `gennomx_migrator`, `gennomx_readonly`, `gennomx_worker` com `rolsuper=false`/`rolbypassrls=false`.
+- Schemas/roles Supabase-specific a NAO migrar: `auth`, `graphql`, `graphql_public`, `realtime`, `storage`, `vault`, `extensions`; roles `anon`, `authenticated`, `service_role`, `supabase_admin`, `supabase_auth_admin`, `supabase_storage_admin`.
+- Contagens: `data_sources=8` (todas inactive, sem ingestao); `retention_policies=5`; demais 26 tabelas = 0.
+
+Decisao: `pg_dump --data-only`/`pg_restore` fica dispensavel porque a origem so tem seeds ja replicados no alvo pelas proprias migracoes Alembic (`0001`+`0004`, `ON CONFLICT DO NOTHING`). Comparacao e conceitual; `tools/compare_postgres_migration.py` nao foi executado porque nao houve restore. UUIDs de `data_sources` diferem entre origem e alvo (aleatorios por migracao), irrelevante porque app referencia por `slug`. Aplicacao (`backend`/pytest) contra VPS DB nao foi validada nesta sessao pois o Postgres da VPS esta em rede Docker interna nao alcancavel desta maquina. Cutover produtivo permanece nao executado por restricao do Marcus. Projeto Supabase segue `ACTIVE_HEALTHY` ao final da sessao.
+
+---
+
+### Registro de correcao MCP Supabase — 2026-07-09
+
+MCP Supabase foi corrigido/autenticado localmente. No Codex, `codex mcp login supabase` concluiu via OAuth e a entrada `supabase` deixou de exigir `SUPABASE_ACCESS_TOKEN`, passando a `auth_status=o_auth`. No OpenCode, a entrada ativa foi trocada de `mcp-server-supabase` local sem token para o MCP remoto oficial e `opencode mcp auth supabase` concluiu; `opencode mcp list` mostra `supabase connected`. A sessao atual ainda nao injeta ferramentas novas dinamicamente, entao o inventario real deve ser retomado em nova sessao.
+
+---
+
+## Data warehouse e ingestao recorrente - plano aprovado 2026-07-09
+
+Marcus aprovou o inicio da construcao operacional do banco/data warehouse da GennomX AI, partindo do estado real ja implementado: conectores `clinicaltrials_gov`, `pubmed`, `openfda`, `dailymed`, `open_targets` e `ema`; schema PostgreSQL/Supabase; raw storage; evidencias; Celery/Redis; MCP read-only; dashboard e governanca temporal.
+
+Plano canonico: `project_state/plano_data_warehouse_ingestao.md`. Prompt de continuacao para outro agente: `project_state/prompt_implementacao_dw_etapas_1_4.md`.
+
+### Escopo aprovado para inicio
+
+| Etapa | Escopo | Estado |
+|---|---|---|
+| DW-1 | Diagnostico e inventario real do banco, conectores, jobs, MCP e ambiente | A iniciar |
+| DW-2 | Ativacao controlada dos conectores existentes com handshake/dry-run/execucao limitada e validacao de idempotencia | A iniciar |
+| DW-3 | Contrato e camada inicial de qualidade/cobertura do warehouse (`WarehouseCoverageService`/API/dashboard se couber) | A iniciar |
+| DW-4 | Granularidade clinica inicial: planejamento tecnico e primeiro incremento seguro para endpoints/resultados/safety | A iniciar |
+
+### Fora de escopo da primeira rodada
+
+ANVISA, PMC full-text, congressos, press releases, investor decks, fontes licenciadas, OpenSearch, vector DB dedicado, API comercial/billing, chatbot ou geracao final interna de relatorios.
+
+### Cadencia alvo
+
+Backbone diario: ClinicalTrials.gov, PubMed, openFDA, DailyMed e freshness. Backbone semanal: Open Targets, EMA, retencao e qualidade/cobertura. Fontes event-driven entram apenas em ondas posteriores, apos estabilidade do backbone estruturado.
+
+---
+
 ## Preparação do deploy do MVP — plano aprovado 2026-07-02
 
 Análise do estado real (código, não documentação) confirmou: 9 ferramentas MCP completas,
@@ -9,8 +112,9 @@ e migrado até `0005`. Lacunas originalmente identificadas: conectores P1 faltan
 `regulatory_approvals` sem fonte, ausência de infra de deploy, migração `0006` não aplicada em
 produção e hardening MCP/Redis remoto.
 
-Decisões do usuário: escopo = todos os conectores P1; host do backend = Hostinger VPS (frontend em
-Vercel/Netlify); prioridade = fechar conectores primeiro, depois prontidão de deploy.
+Decisões do usuário: escopo = todos os conectores P1; topologia F4 = GennomX AI sob `gennomx.com`
+(`admin.gennomx.com/ai`, `admin.gennomx.com/api/ai`, `mcp.gennomx.com`); prioridade = fechar
+conectores primeiro, depois prontidão de deploy.
 
 Plano completo: `C:\Users\marcu\.claude\plans\analise-o-projeto-e-replicated-marshmallow.md`.
 
@@ -39,11 +143,11 @@ persistence_flow) → docs (`docs/03`, `docs/04`, `docs/09` §0.2, `docs/11`) �
 |---|---|
 | Retry manual para todos os conectores P1 implementados | ✅ Implementado 2026-07-02 |
 | `API_ALLOWED_HOSTS` configurável / sem domínio hardcoded | ✅ Implementado 2026-07-02 |
-| Stack backend Hostinger VPS (API + worker + beat + Caddy + Redis TLS) | ✅ Base implementada 2026-07-02 |
+| Stack backend GennomX AI sob `admin.gennomx.com/api/ai` + `mcp.gennomx.com` (API + worker + beat + Redis TLS) | ✅ Base implementada 2026-07-02 |
 | Planilha `fontes_priorizacao.xlsx` com P1 implementados | ✅ Atualizada 2026-07-02 |
 | Git/segredos (primeiro commit, `.env` fora do versionamento) | ⏳ Pendente de ação operacional |
 | `alembic upgrade head` real em Supabase produção (`0006`) | ⏳ Pendente de credenciais/rede |
-| Frontend em Vercel/Netlify | ⏳ Pendente de provisionamento |
+| Frontend em `admin.gennomx.com/ai` | ⏳ Pendente de provisionamento |
 | `make release-check` e `make handshake` em ambiente com rede | ⏳ Pendente de execução externa |
 | Observabilidade/backup e rotação formal de tokens MCP | ⏳ Pendente de operação |
 
@@ -341,3 +445,5 @@ verde no GitHub ⏳ (depende do commit/push, A5 adiado); nenhuma regressão ✅
 implementados e validados localmente. A5 (primeiro commit) fica a critério do usuário.
 Pendências remanescentes: validação manual em ambiente rodando e atualização de
 documentação (docs/05, docs/07, docs/11, findings.md).
+
+

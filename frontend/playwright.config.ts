@@ -15,11 +15,12 @@ export default defineConfig({
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
   webServer: {
     command: "node node_modules/next/dist/bin/next dev --port 3000",
-    url: "http://127.0.0.1:3000/companies",
+    url: "http://127.0.0.1:3000/ai/companies",
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
     env: {
       E2E_BYPASS_AUTH: "true",
+      NEXT_PUBLIC_BASE_PATH: "/ai",
       NEXT_PUBLIC_API_URL: "http://127.0.0.1:8000",
       NEXT_PUBLIC_SUPABASE_URL: "https://e2e.supabase.co",
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "e2e-anon-key",

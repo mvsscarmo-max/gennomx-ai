@@ -1,5 +1,36 @@
 # project_state / findings.md — GennomX AI
 
+## Achados operacionais da ingestão recorrente — 2026-07-09
+
+| Apontamento | Parecer interno | Tratamento |
+|---|---|---|
+| `docker compose config` interpolou `.env` local e expôs segredos reais no stdout (tokens MCP, `SUPABASE_SERVICE_ROLE_KEY`, `NCBI_API_KEY`) | Procedente, médio (segurança operacional) | Valores não registrados em arquivo; output do terminal tratado como sensível. Recomendação registrada em `docs/09` e aqui: preferir `docker compose config --no-interpolate` ou validar por teste unitário (`test_postgres_vps_artifacts.py`). Avaliar rotação das chaves expostas no terminal antes de produção |
+| Host `gennomx-ai-postgres-ready-postgres-1` resolve na rede `gennomx-ai-postgres-ready-private` (probe efêmero confirmou 172.16.4.2) | Procedente, baixo | Confirma que o app compose pode acessar o Postgres pela rede externa; probe removido |
+| VPS tem somente Postgres + Traefik; não há backend/worker/Redis deployados | Procedente, informação | `infra/docker-compose.vps-app.yml` criado para deploy da aplicação; exige copiar o código para a VPS e `.env` staging |
+| Banco origem Supabase e alvo VPS estão em paridade funcional de seeds (bootstrap puro, sem ingestão real) | Procedente, baixo | Cutover de dados é trivial; foco é operacionalizar a ingestão contra a VPS |
+| 3 tasks de processamento (`link_trials_to_assets`/`deduplicate_assets`/`compute_confidence_scores`) existem mas não estão no `beat_schedule` | Procedente, baixo | Proposta de complemento documentada em `plano_ingestao_fase_operacional.md` fase D; aplicar após primeira ingestão |
+
+---
+
+## Achados operacionais da migração PostgreSQL VPS — 2026-07-09
+
+| Apontamento | Parecer interno | Tratamento |
+|---|---|---|
+| Projeto Hostinger existente `postgresql-spko` publicava PostgreSQL em `0.0.0.0:32768` e IPv6 | Procedente, alto | Firewall Hostinger `gennomx-ai-vps-public-ingress` criado/ativado/sincronizado permitindo só SSH/HTTP/HTTPS/ICMP; projeto legado removido após aprovação explícita |
+| Inventário real Supabase confirma banco bootstrap: apenas `data_sources=8` e `retention_policies=5` têm dados; outras 26 tabelas zero | Procedente, alto impacto na operação | Decisão técnica: `pg_dump --data-only`/`pg_restore` dispensável pois as seeds já são reproduzidas no alvo VPS pelas próprias migrações Alembic 0001/0004 (`ON CONFLICT DO NOTHING`). Nenhuma ingestão real foi executada neste banco. Recomenda-se skipar pg_restore e tratar staging como concluído para dados |
+| `alembic_version` divergente: Supabase=0005, VPS=0006 (VPS à frente) | Procedente, baixo | VPS já inclui `llm_call_logs` (0006). Recomendação: opcionalmente aplicar `alembic upgrade head` na origem Supabase antes do cutover para paridade formal; alvo não exige retrabalho |
+| `vector` divergente: origem 0.8.0, alvo 0.8.1 | Procedente, baixo | Sem impacto funcional conhecido; alvo usa 0.8.1-pg16 |
+| `data_sources` UUIDs aleatórios por migração divergem entre origem e alvo | Procedente, irrelevante | App referencia `data_sources` por `slug`, não por `id`; UUIDs divergentes não afetam o produto |
+| Validar aplicação (backend/pytest) contra VPS DB bloqueada nesta sessão | Bloqueio operacional | VPS Postgres em rede Docker interna (`gennomx-ai-postgres-ready-private`) não alcançável desta máquina Windows; exigirá backend em staging on-VPS ou VPN/tunnel |
+| Projeto Supabase restaurado para `ACTIVE_HEALTHY` para inventário (estava `INACTIVE`) | Procedente, reversível | Marcus pode repausar o projeto Supabase quando desejar; deixá-lo ativo nesta sessão foi necessário para executar `execute_sql` via MCP |
+| Tentativas intermediárias de bootstrap (`gennomx-ai-postgres*`) registraram senhas de tentativa em logs por erro de quoting SQL | Procedente, alto | Senhas tratadas como comprometidas; stack final `gennomx-ai-postgres-ready` usa credenciais novas e bootstrap `Exited (0)`; projetos intermediários removidos após aprovação explícita |
+| MCP Supabase não apareceu entre recursos/ferramentas disponíveis nesta sessão | Resolvido na configuração local; pendente nova sessão | Causa isolada: Codex exigia `SUPABASE_ACCESS_TOKEN` apesar de OAuth disponível, e OpenCode usava `mcp-server-supabase` local sem token. Executados `codex mcp login supabase`, remoção de `bearer_token_env_var`, troca do OpenCode para MCP remoto e `opencode mcp auth supabase`. Validação: Codex `auth_status=o_auth`; OpenCode `supabase connected/authenticated`. A sessão atual ainda precisa ser reiniciada para injetar as novas ferramentas. |
+| URL direta Supabase local indisponível para inventário/dump | Bloqueio operacional | Host direto `db.qfanrziwepkqkgtvfrdt.supabase.co` falhou DNS; pooler respondeu mas rejeitou role/tenant configurada; não inventar credenciais nem usar `postgres`/`service_role` |
+| Aplicar Alembic via Hostinger sem imagem/remote do backend | Resolvido para staging | SQL offline foi compactado/dividido em dois chunks menores que 8192 caracteres e aplicado por projeto temporário na rede interna; alvo validado em `alembic_version=0006` |
+| API Hostinger `getProjectContents` retorna variáveis de ambiente sensíveis | Procedente, médio | Valores não foram registrados em docs; tratar respostas/logs dessa API como sensíveis e avaliar rotação antes de produção |
+
+---
+
 ## Triagem da revisão técnica sênior — 2026-07-02
 
 | Apontamento | Parecer interno | Tratamento |

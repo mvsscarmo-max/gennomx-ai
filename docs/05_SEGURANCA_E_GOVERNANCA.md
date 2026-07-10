@@ -51,7 +51,8 @@ Credenciais de serviço são provisionadas externamente e recebem membership no 
 Redis exige senha; serviços administrativos ficam em loopback. Produção rejeita banco/Redis em
 localhost, exige TLS em PostgreSQL/Redis e rejeita o backend S3 ainda não suportado.
 `API_ALLOWED_HOSTS` configura explicitamente o `TrustedHostMiddleware` em produção; wildcard global
-e localhost são recusados. O compose produtivo (`infra/docker-compose.prod.yml`) mantém Redis em
+e localhost são recusados. Na topologia atual, o backend também exige `ROOT_PATH=/api/ai` atrás do
+hub `admin.gennomx.com`. O compose produtivo (`infra/docker-compose.prod.yml`) mantém Redis em
 TLS (`rediss://`) com certificados fora do Git em `secrets/redis/`.
 
 Este documento consolida os princípios, ameaças, controles e políticas de segurança da GennomX AI.
@@ -148,7 +149,7 @@ Mesmo sem multiusuário completo no MVP, recomenda-se desenhar tabelas com prepa
 
 ### Integração operacional com Supabase
 
-O PostgreSQL da Supabase é o banco primário do MVP. A aplicação não deve usar a role `postgres`,
+Até o cutover banco-only, o PostgreSQL da Supabase permanece como origem de verdade. Após o cutover, o PostgreSQL/pgvector na VPS passa a ser o banco primário. Em ambos os casos, a aplicação não deve usar a role `postgres`,
 `anon`, `authenticated` ou `service_role` como usuário de conexão do backend. O bootstrap
 operacional está em `infra/supabase/bootstrap_roles.sql` e cria quatro roles dedicadas:
 
@@ -159,11 +160,11 @@ operacional está em `infra/supabase/bootstrap_roles.sql` e cria quatro roles de
 | `gennomx_app` | FastAPI/dashboard/MCP HTTP | leitura ampla e inserts operacionais restritos, como logs MCP, eventos de segurança e correções manuais |
 | `gennomx_readonly` | inspeção controlada | leitura sem escrita |
 
-Variáveis obrigatórias para Supabase hospedado:
+Variáveis obrigatórias para o banco principal e para Supabase Auth/Storage temporários:
 
-- `DATABASE_URL`: role `gennomx_app`, de preferência pelo pooler Supabase.
-- `WORKER_DATABASE_URL`: role `gennomx_worker`, de preferência pelo pooler Supabase.
-- `DATABASE_URL_SYNC`: role `gennomx_migrator`, de preferência por conexão direta para migrações.
+- `DATABASE_URL`: role `gennomx_app`, apontando para Supabase antes do cutover ou para PostgreSQL VPS depois.
+- `WORKER_DATABASE_URL`: role `gennomx_worker`, apontando para a mesma origem de verdade do banco.
+- `DATABASE_URL_SYNC`: role `gennomx_migrator`, para Alembic/migrações e validações controladas.
 - `SUPABASE_URL`, `SUPABASE_PROJECT_REF`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` e
   `SUPABASE_JWKS_URL`, mantidos apenas em variáveis protegidas. `SUPABASE_JWT_SECRET` permanece
   somente como fallback legado HS256 durante transição.
@@ -193,6 +194,29 @@ Regras:
 - testar políticas de RLS;
 - criar testes específicos de autorização negativa.
 
+## 12.5A PostgreSQL VPS e Supabase Auth/Storage Temporários
+
+Decisão de 2026-07-09: a primeira migração substitui somente o banco PostgreSQL hospedado na Supabase por PostgreSQL/pgvector na VPS Hostinger. Supabase Auth/JWKS e Supabase Storage permanecem temporariamente para preservar login, validação JWT e raw payload auditável.
+
+Regras obrigatórias do banco VPS:
+
+- `DATABASE_PROVIDER=vps_postgres` quando as três URLs de banco apontarem para a VPS.
+- `DATABASE_URL` usa `gennomx_app`; `WORKER_DATABASE_URL` usa `gennomx_worker`; `DATABASE_URL_SYNC` usa `gennomx_migrator`.
+- Roles login `gennomx_app`, `gennomx_worker`, `gennomx_migrator` e `gennomx_readonly` devem ser `NOSUPERUSER`, `NOBYPASSRLS`, `NOCREATEDB`, `NOCREATEROLE` e sem uso pela aplicação com usuário `postgres`.
+- `5432` não deve ser publicado na internet; acesso apenas por rede Docker/VPS privada ou boundary privado equivalente.
+- Produção mantém TLS obrigatório nas URLs de banco (`ssl=require`/`sslmode=require`) e certificados fora do Git.
+- Rotinas de backup/inspeção usam `gennomx_readonly`, também com TLS e sem privilégios administrativos; essa role recebe `SELECT` em tabelas e `USAGE, SELECT` em sequences para permitir dumps consistentes sem `postgres`/superuser.
+- O bootstrap de roles na VPS deve ser reaplicável e aceitar rotação de senhas por variáveis `psql`; não deve depender de senha hardcoded nem de um nome fixo de database.
+- RLS/policies existentes não devem ser relaxadas para facilitar restore; quando necessário, o restore usa usuário administrativo em janela controlada e os grants são reaplicados depois.
+- Backups automáticos e restore testado tornam-se responsabilidade operacional da GennomX antes do cutover.
+
+Objetos Supabase-specific fora do escopo do dump da aplicação: schemas/roles de `auth`, `storage`, `realtime`, `graphql_public`, `vault`, `anon`, `authenticated`, `service_role` e roles administrativas Supabase. Esses objetos continuam na Supabase enquanto Auth/Storage estiverem ativos e não devem ser recriados no PostgreSQL VPS nesta rodada.
+
+`backend/app/config.py` falha fechado em produção se `DATABASE_PROVIDER=vps_postgres` for combinado com URLs de banco Supabase, reduzindo o risco de cutover parcial/incoerente.
+
+Estado operacional em 2026-07-09: a VPS Hostinger `1817951` recebeu firewall sincronizado permitindo apenas SSH/HTTP/HTTPS/ICMP de entrada. A stack staging válida é `gennomx-ai-postgres-ready`, sem publicação de porta PostgreSQL no host. O projeto legado `postgresql-spko` e as stacks intermediárias de bootstrap foram removidos após aprovação explícita. Logs antigos das stacks intermediárias continham senhas de tentativa já descartadas e devem ser tratados como sensíveis.
+
+Validação adicional em 2026-07-09: Alembic `head` foi aplicado no staging VPS e o alvo foi verificado com `alembic_version=0006`, extensões esperadas, 27 tabelas com RLS, 60 policies e roles `gennomx_app`, `gennomx_migrator`, `gennomx_readonly`, `gennomx_worker` com `rolsuper=false` e `rolbypassrls=false`. A inspeção de projeto pela API Hostinger pode retornar variáveis de ambiente sensíveis; não registrar esses valores em docs/logs e avaliar rotação antes de produção.
 ## 12.6 Segurança de API
 
 Requisitos:

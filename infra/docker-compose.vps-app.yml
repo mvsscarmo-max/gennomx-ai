@@ -1,0 +1,161 @@
+# GennomX AI — Deploy da aplicação na VPS Hostinger (topologia gennomx.com).
+#
+# Este compose sobe Redis + API + worker + beat na VPS, conectados ao PostgreSQL
+# da stack `gennomx-ai-postgres-ready` pela rede Docker interna
+# `gennomx-ai-postgres-ready-private` (rede externa, já provisionada).
+#
+# Topologia ativa (D-011 do workspace raiz):
+#   - Dashboard: https://admin.gennomx.com/ai   (frontend, deploy separado)
+#   - API:       https://admin.gennomx.com/api/ai (Traefik -> api:8000)
+#   - MCP:       https://mcp.gennomx.com          (Traefik -> api:8000, rota /mcp)
+#
+# Pré-requisitos:
+#   1. Stack `gennomx-ai-postgres-ready` já healthy (Postgres em rede interna).
+#   2. `.env` na VPS preenchido com variáveis reais (ver `.env.example` e `docs/09`).
+#   3. Código do backend neste repo copiado para a VPS (git/rsync) para o build.
+#   4. Para a PRIMEIRA rodada de ingestão, usar ENVIRONMENT=staging (não exige
+#      rediss:// nem outras validações de produção); promover a production depois.
+#   5. Redis interno sem TLS é aceitável em staging dentro da rede Docker. Em
+#      production, config.py exige `rediss://` — ver `backend/app/config.py`.
+#
+# Uso (na VPS, dentro do repo):
+#   cp .env.example .env  # preencher valores reais
+#   docker compose -f infra/docker-compose.vps-app.yml up -d --build redis worker beat
+#   # API sobe sob profile `api`:
+#   docker compose -f infra/docker-compose.vps-app.yml --profile api up -d --build api
+#
+# Comandos úteis:
+#   docker compose -f infra/docker-compose.vps-app.yml logs -f worker beat
+#   docker compose -f infra/docker-compose.vps-app.yml ps
+#   docker compose -f infra/docker-compose.vps-app.yml down
+
+services:
+  redis:
+    image: redis:7.4.5-alpine
+    container_name: gennomx-ai-redis
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    command:
+      - "redis-server"
+      - "--appendonly"
+      - "yes"
+      - "--requirepass"
+      - "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"
+    volumes:
+      - gennomx_ai_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+
+  worker:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: gennomx-ai-worker
+    env_file:
+      - ../.env
+    environment:
+      # Garante que o worker usa a role correta e o DB VPS (override de .env
+      # caso DATABASE_PROVIDER tenha ficado em supabase_postgres).
+      DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must point to the VPS Postgres}
+      WORKER_DATABASE_URL: ${WORKER_DATABASE_URL:?WORKER_DATABASE_URL must point to the VPS Postgres}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:?DATABASE_URL_SYNC must point to the VPS Postgres}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+    command:
+      - "celery"
+      - "-A"
+      - "workers.celery_app"
+      - "worker"
+      - "--loglevel=info"
+      - "-Q"
+      - "ingest,process,ai"
+      - "--concurrency=1"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+      - gennomx-ai-postgres-ready-private
+
+  beat:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: gennomx-ai-beat
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must point to the VPS Postgres}
+      WORKER_DATABASE_URL: ${WORKER_DATABASE_URL:?WORKER_DATABASE_URL must point to the VPS Postgres}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:?DATABASE_URL_SYNC must point to the VPS Postgres}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+    command:
+      - "celery"
+      - "-A"
+      - "workers.celery_app"
+      - "beat"
+      - "--loglevel=info"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+
+  api:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: gennomx-ai-api
+    env_file:
+      - ../.env
+    environment:
+      DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must point to the VPS Postgres}
+      WORKER_DATABASE_URL: ${WORKER_DATABASE_URL:?WORKER_DATABASE_URL must point to the VPS Postgres}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:?DATABASE_URL_SYNC must point to the VPS Postgres}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+    depends_on:
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    profiles:
+      - api
+    networks:
+      - gennomx_ai_app
+      - gennomx-ai-postgres-ready-private
+
+volumes:
+  gennomx_ai_redis_data:
+
+networks:
+  gennomx_ai_app:
+    name: gennomx-ai-app
+    internal: true
+  gennomx-ai-postgres-ready-private:
+    external: true

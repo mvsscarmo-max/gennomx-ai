@@ -12,8 +12,7 @@ import type {
   TargetSummary,
   SecurityEventSummary,
 } from "./types";
-
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+import { apiUrl } from "./api-base";
 
 // ── Core fetcher ───────────────────────────────────────────────────────────────
 
@@ -24,7 +23,7 @@ async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
     const { data } = await getSupabaseBrowserClient().auth.getSession();
     accessToken = data.session?.access_token;
   }
-  const res = await fetch(`${BASE}${path}`, {
+  const res = await fetch(apiUrl(path), {
     headers: {
       "Content-Type": "application/json",
       ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
@@ -70,12 +69,12 @@ export interface AssetFilters {
 export const assetsApi = {
   list: (filters: AssetFilters = {}) =>
     apiFetch<PaginatedResponse<DrugAssetSummary>>(
-      `/api/v1/assets${toQuery(filters)}`
+      `api/v1/assets${toQuery(filters)}`
     ),
 
   detail: (id: string) =>
     apiFetch<{ success: boolean; data: DrugAssetDetail }>(
-      `/api/v1/assets/${id}`
+      `api/v1/assets/${id}`
     ),
 };
 
@@ -95,37 +94,37 @@ export interface TrialFilters {
 export const trialsApi = {
   list: (filters: TrialFilters = {}) =>
     apiFetch<PaginatedResponse<TrialSummary>>(
-      `/api/v1/trials${toQuery(filters)}`
+      `api/v1/trials${toQuery(filters)}`
     ),
 };
 
 export const companiesApi = {
   list: (filters: { q?: string; company_type?: string; country?: string; page?: number; page_size?: number } = {}) =>
-    apiFetch<PaginatedResponse<CompanySummary>>(`/api/v1/companies${toQuery(filters)}`),
+    apiFetch<PaginatedResponse<CompanySummary>>(`api/v1/companies${toQuery(filters)}`),
 };
 
 export const indicationsApi = {
   list: (filters: { q?: string; therapeutic_area?: string; page?: number; page_size?: number } = {}) =>
-    apiFetch<PaginatedResponse<IndicationSummary>>(`/api/v1/indications${toQuery(filters)}`),
+    apiFetch<PaginatedResponse<IndicationSummary>>(`api/v1/indications${toQuery(filters)}`),
 };
 
 export const targetsApi = {
   list: (filters: { q?: string; target_type?: string; page?: number; page_size?: number } = {}) =>
-    apiFetch<PaginatedResponse<TargetSummary>>(`/api/v1/targets${toQuery(filters)}`),
+    apiFetch<PaginatedResponse<TargetSummary>>(`api/v1/targets${toQuery(filters)}`),
 };
 
 export const auditApi = {
   mcp: (filters: { status?: string; tool_name?: string; page?: number; page_size?: number } = {}) =>
-    apiFetch<PaginatedResponse<McpAuditSummary>>(`/api/v1/audit/mcp${toQuery(filters)}`),
+    apiFetch<PaginatedResponse<McpAuditSummary>>(`api/v1/audit/mcp${toQuery(filters)}`),
   security: (filters: { severity?: string; status?: string; page?: number; page_size?: number } = {}) =>
-    apiFetch<PaginatedResponse<SecurityEventSummary>>(`/api/v1/audit/security${toQuery(filters)}`),
+    apiFetch<PaginatedResponse<SecurityEventSummary>>(`api/v1/audit/security${toQuery(filters)}`),
 };
 
 // ── Sources ───────────────────────────────────────────────────────────────────
 
 export const sourcesApi = {
   list: () =>
-    apiFetch<PaginatedResponse<DataSourceSummary>>(`/api/v1/sources`),
+    apiFetch<PaginatedResponse<DataSourceSummary>>(`api/v1/sources`),
 };
 
 // ── Jobs ──────────────────────────────────────────────────────────────────────
@@ -133,12 +132,12 @@ export const sourcesApi = {
 export const jobsApi = {
   list: (filters: { source_slug?: string; status?: string; page?: number; page_size?: number } = {}) =>
     apiFetch<PaginatedResponse<IngestionJobSummary>>(
-      `/api/v1/jobs${toQuery(filters)}`
+      `api/v1/jobs${toQuery(filters)}`
     ),
 
   workerStatus: () =>
     apiFetch<{ success: boolean; data: { worker_count: number; active_tasks: number } }>(
-      `/api/v1/jobs/worker-status`
+      `api/v1/jobs/worker-status`
     ),
 };
 
@@ -146,7 +145,7 @@ export const jobsApi = {
 
 export const healthApi = {
   check: () =>
-    apiFetch<{ status: string; environment: string; version: string }>(`/health`),
+    apiFetch<{ status: string; environment: string; version: string }>(`health`),
 };
 
 export interface GovernanceStatus {
@@ -184,14 +183,14 @@ export interface GovernanceStatus {
 }
 
 export const governanceApi = {
-  status: () => apiFetch<GovernanceStatus>("/api/v1/governance/status"),
+  status: () => apiFetch<GovernanceStatus>("api/v1/governance/status"),
   pauseDomain: (domain: string) =>
     apiFetch<{ domain: string; status: string }>(
-      `/api/v1/governance/scraper-domains/${encodeURIComponent(domain)}/pause`,
+      `api/v1/governance/scraper-domains/${encodeURIComponent(domain)}/pause`,
       { method: "POST" }
     ),
   runRetention: (dryRun: boolean) =>
-    apiFetch<{ task_id: string; status: string }>("/api/v1/governance/retention/run", {
+    apiFetch<{ task_id: string; status: string }>("api/v1/governance/retention/run", {
       method: "POST",
       body: JSON.stringify({ dry_run: dryRun, batch_size: 1000 }),
     }),
@@ -201,7 +200,7 @@ export const governanceApi = {
 
 export const overviewApi = {
   stats: () =>
-    apiFetch<{ success: boolean; data: OverviewStats }>("/api/v1/overview").then(
+    apiFetch<{ success: boolean; data: OverviewStats }>("api/v1/overview").then(
       (response) => response.data,
     ),
 };

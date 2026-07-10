@@ -1,5 +1,10 @@
 # 01 — Arquitetura da GennomX AI
 
+## Atualização de arquitetura de dados — 2026-07-09
+
+A primeira migração aprovada troca somente o banco principal: PostgreSQL hospedado na Supabase -> PostgreSQL/pgvector na VPS Hostinger. Supabase Auth/JWKS e Supabase Storage permanecem temporariamente e seguem fora do escopo deste corte. A arquitetura alvo desta rodada é, portanto, banco VPS + Auth Supabase + Storage Supabase, preservando dashboard, API, MCP, workers, raw payload e login.
+
+Estado de staging em 2026-07-09: a stack PostgreSQL VPS `gennomx-ai-postgres-ready` está em rede privada, sem porta `5432` publicada, com Alembic em `head` (`0006`), extensões pgvector/pg_trgm/pgcrypto/uuid-ossp instaladas e roles dedicadas sem superuser/BYPASSRLS. Dados ainda não foram restaurados da Supabase porque o MCP Supabase e uma `SUPABASE_DIRECT_URL` funcional seguem indisponíveis nesta sessão.
 ## Governança operacional pré-gravação — 2026-06-21
 
 O caminho executável passa a ser: conector → raw imutável → normalização → staging/deduplicação
@@ -158,9 +163,9 @@ Responsável por:
 
 ### MVP recomendado
 
-- **Supabase/PostgreSQL** como banco relacional principal.
-- **Supabase Auth** para autenticação inicial.
-- **Supabase Storage ou S3-compatible storage** para documentos brutos e arquivos processados.
+- **PostgreSQL/pgvector na VPS** como banco relacional principal após o cutover banco-only; Supabase/PostgreSQL permanece como origem até o corte e como rollback temporário.
+- **Supabase Auth/JWKS** para autenticação temporária nesta rodada.
+- **Supabase Storage** para documentos brutos e arquivos processados nesta rodada; S3-compatible/MinIO fica para plano posterior.
 - **PostgreSQL full-text search** para busca textual inicial.
 - **pgvector** para embeddings em MVP avançado ou Fase 2.
 - **DuckDB nos workers** para processamento local/analítico de arquivos grandes, validações batch e exploração offline.
@@ -588,7 +593,7 @@ Responsável por:
 
 ## 5.1 Recomendação para MVP
 
-A recomendação inicial é utilizar **Supabase/PostgreSQL** como núcleo, por combinar:
+A recomendação inicial foi Supabase/PostgreSQL. A decisão de 2026-07-09 migra o banco principal para PostgreSQL/pgvector na VPS, mantendo Supabase Auth/Storage temporariamente. A escolha de PostgreSQL como núcleo permanece por combinar:
 
 - banco relacional maduro;
 - autenticação integrada;

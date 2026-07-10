@@ -20,12 +20,12 @@ async function mockApi(page: Page) {
 test.beforeEach(async ({ page }) => mockApi(page));
 
 for (const scenario of [
-  ["/companies", "Empresas", "GennomX Biotech"],
-  ["/indications", "Indicações", "Melanoma"],
-  ["/targets", "Targets", "BRAF"],
-  ["/jobs", "Jobs de Ingestão", "clinicaltrials_gov"],
-  ["/mcp-logs", "Logs MCP", "search_drugs"],
-  ["/security", "Segurança Operacional", "rate_limit"],
+  ["/ai/companies", "Empresas", "GennomX Biotech"],
+  ["/ai/indications", "Indicações", "Melanoma"],
+  ["/ai/targets", "Targets", "BRAF"],
+  ["/ai/jobs", "Jobs de Ingestão", "clinicaltrials_gov"],
+  ["/ai/mcp-logs", "Logs MCP", "search_drugs"],
+  ["/ai/security", "Segurança Operacional", "rate_limit"],
 ] as const) {
   test(`${scenario[1]} renderiza dados da API`, async ({ page }) => {
     await page.goto(scenario[0]);
@@ -35,7 +35,7 @@ for (const scenario of [
 }
 
 test("busca de empresas atualiza o contrato sem perder a tela", async ({ page }) => {
-  await page.goto("/companies");
+  await page.goto("/ai/companies");
   await page.getByPlaceholder("Buscar razão social ou alias...").fill("GennomX");
   await expect(page.getByText("GennomX Biotech", { exact: true })).toBeVisible();
 });

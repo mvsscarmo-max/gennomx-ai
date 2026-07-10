@@ -20,6 +20,7 @@ def production_settings(**overrides):
         "SUPABASE_JWKS_URL": "https://project.supabase.co/auth/v1/.well-known/jwks.json",
         "SUPABASE_JWT_SECRET": "jwt-secret",
         "API_INTERNAL_KEY": "internal-secret",
+        "ROOT_PATH": "/api/ai",
         "MCP_TOKEN_CHATGPT": "mcp-secret",
         "CORS_ORIGINS": "https://app.gennomx.example",
         "API_ALLOWED_HOSTS": "api.gennomx.example,*.gennomx.example",
@@ -88,3 +89,22 @@ def test_production_rejects_wildcard_api_allowed_hosts():
 def test_api_allowed_hosts_are_parsed_as_csv():
     settings = production_settings(API_ALLOWED_HOSTS="api.gennomx.example, mcp.gennomx.example")
     assert settings.api_allowed_hosts_list == ["api.gennomx.example", "mcp.gennomx.example"]
+
+@pytest.mark.unit
+def test_vps_database_provider_rejects_supabase_database_urls():
+    with pytest.raises(ValidationError):
+        production_settings(
+            DATABASE_PROVIDER="vps_postgres",
+            DATABASE_URL=(
+                "postgresql+asyncpg://gennomx_app.project-ref:secret@pooler.supabase.com/postgres"
+                "?ssl=require"
+            ),
+            WORKER_DATABASE_URL=(
+                "postgresql+asyncpg://gennomx_worker.project-ref:secret@pooler.supabase.com/postgres"
+                "?ssl=require"
+            ),
+            DATABASE_URL_SYNC=(
+                "postgresql://gennomx_migrator:secret@db.project-ref.supabase.co/postgres"
+                "?sslmode=require"
+            ),
+        )

@@ -1,0 +1,130 @@
+# Entry point para deploy Hostinger VPS (topologia gennomx.com).
+# Adaptacao de infra/docker-compose.vps-app.yml sem env_file (Hostinger injeta
+# variaveis via environment do projeto). Build context relativo a ./backend.
+#
+# Sobe Redis + worker + beat. API sob profile `api` (nao sobe por default).
+# Conecta-se a gennomx-ai-postgres-ready-private (external) para acessar o
+# Postgres da stack gennomx-ai-postgres-ready.
+#
+# Hostinger resolve docker-compose.yaml no branch main do repo.
+services:
+  redis:
+    image: redis:7.4.5-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+    command:
+      - "redis-server"
+      - "--appendonly"
+      - "yes"
+      - "--requirepass"
+      - "${REDIS_PASSWORD:?Set REDIS_PASSWORD}"
+    volumes:
+      - gennomx_ai_redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" ping | grep PONG"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-staging}
+      DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must point to the VPS Postgres}
+      WORKER_DATABASE_URL: ${WORKER_DATABASE_URL:?WORKER_DATABASE_URL must point to the VPS Postgres}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:?DATABASE_URL_SYNC must point to the VPS Postgres}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-supabase}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
+      SUPABASE_STORAGE_BUCKET_RAW: ${SUPABASE_STORAGE_BUCKET_RAW:-gennomx-raw}
+      SUPABASE_STORAGE_BUCKET_PROCESSED: ${SUPABASE_STORAGE_BUCKET_PROCESSED:-gennomx-processed}
+      SUPABASE_STORAGE_BUCKET_EVIDENCE: ${SUPABASE_STORAGE_BUCKET_EVIDENCE:-gennomx-evidence}
+      NCBI_API_KEY: ${NCBI_API_KEY:-}
+      NCBI_EMAIL: ${NCBI_EMAIL:-}
+      OPENFDA_API_KEY: ${OPENFDA_API_KEY:-}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    command:
+      - "celery"
+      - "-A"
+      - "workers.celery_app"
+      - "worker"
+      - "--loglevel=info"
+      - "-Q"
+      - "ingest,process,ai"
+      - "--concurrency=1"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+      - gennomx-ai-postgres-ready-private
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-staging}
+      DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must point to the VPS Postgres}
+      WORKER_DATABASE_URL: ${WORKER_DATABASE_URL:?WORKER_DATABASE_URL must point to the VPS Postgres}
+      DATABASE_URL_SYNC: ${DATABASE_URL_SYNC:?DATABASE_URL_SYNC must point to the VPS Postgres}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-supabase}
+      SUPABASE_URL: ${SUPABASE_URL:-}
+      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:-}
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
+      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
+      SUPABASE_STORAGE_BUCKET_RAW: ${SUPABASE_STORAGE_BUCKET_RAW:-gennomx-raw}
+      SUPABASE_STORAGE_BUCKET_PROCESSED: ${SUPABASE_STORAGE_BUCKET_PROCESSED:-gennomx-processed}
+      SUPABASE_STORAGE_BUCKET_EVIDENCE: ${SUPABASE_STORAGE_BUCKET_EVIDENCE:-gennomx-evidence}
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      LOG_FORMAT: ${LOG_FORMAT:-json}
+    command:
+      - "celery"
+      - "-A"
+      - "workers.celery_app"
+      - "beat"
+      - "--loglevel=info"
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+
+volumes:
+  gennomx_ai_redis_data:
+
+networks:
+  gennomx_ai_app:
+    name: gennomx-ai-app
+    internal: true
+  gennomx-ai-postgres-ready-private:
+    external: true
