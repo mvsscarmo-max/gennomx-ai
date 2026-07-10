@@ -6,7 +6,7 @@
 # Conecta-se a gennomx-ai-postgres-ready-private (external) para acessar o
 # Postgres da stack gennomx-ai-postgres-ready.
 #
-# Hostinger resolve docker-compose.yaml no branch main do repo.
+# Hostinger resolve docker-compose.yaml no branch master do repo.
 services:
   redis:
     image: redis:7.4.5-alpine
@@ -33,7 +33,9 @@ services:
       - gennomx_ai_app
 
   worker:
-    image: ghcr.io/mvsscarmo-max/gennomx-ai-backend:latest
+    build:
+      context: https://github.com/mvsscarmo-max/gennomx-ai.git#master:backend
+      dockerfile: Dockerfile
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
@@ -78,7 +80,9 @@ services:
       - gennomx-ai-postgres-ready-private
 
   beat:
-    image: ghcr.io/mvsscarmo-max/gennomx-ai-backend:latest
+    build:
+      context: https://github.com/mvsscarmo-max/gennomx-ai.git#master:backend
+      dockerfile: Dockerfile
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
