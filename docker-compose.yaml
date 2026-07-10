@@ -36,6 +36,8 @@ services:
     build:
       context: https://github.com/mvsscarmo-max/gennomx-ai.git#master:backend
       dockerfile: Dockerfile
+    healthcheck:
+      disable: true
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
@@ -83,6 +85,8 @@ services:
     build:
       context: https://github.com/mvsscarmo-max/gennomx-ai.git#master:backend
       dockerfile: Dockerfile
+    healthcheck:
+      disable: true
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-staging}
       DATABASE_PROVIDER: ${DATABASE_PROVIDER:-vps_postgres}
