@@ -17,3 +17,18 @@
 - Gates finais: pytest `282 passed, 1 skipped`; Ruff lint/format, mypy, Bandit, pip-audit,
   ESLint, TypeScript, base-path, build Next.js, npm audit e 7 E2E Playwright aprovados.
 - PLAN-001 concluído localmente. Validação do backbone na VPS permanece bloqueada por ambiente/autorização.
+
+## 2026-08-12 - T-011 / P0.4 local (D-080 raiz)
+
+- Parecer P0.4 em `project_state/audits/parecer-p04-estrutura-fronteiras.md`.
+- Tip implementacao: `3bbfa56d0cb06664bac31e855bd09df6538af1b7`.
+- Commit parecer: `92cf6649dc4566563cf84005ab9808b9d2e71e28`.
+
+```console
+$ git rev-parse HEAD
+92cf6649dc4566563cf84005ab9808b9d2e71e28
+$ git log -1 --oneline
+92cf664 docs(audit): refazer parecer P0.4 no tip limpo 3bbfa56
+```
+
+- Sem mudanca de produto. Fecha residual D-080 da raiz para GennomX AI.
