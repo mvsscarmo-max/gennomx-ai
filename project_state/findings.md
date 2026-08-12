@@ -25,3 +25,11 @@ reconciliada; menções Supabase restantes devem ser lidas apenas no changelog/a
 
 O arquivo v1 registra que `docker compose config` interpolou segredos. Não repetir; usar
 `--no-interpolate` ou testes estruturais e avaliar rotação antes de produção.
+
+## Achados P0.4 refeita (2026-08-12, tip 3bbfa56)
+
+- F-GXAI-001 atualizado: tip limpo apos commit do WIP.
+- F-GXAI-002 fechado no tip: CONTEXT/TASKS/DECISIONS versionados.
+- F-GXAI-006: Platform Auth + warehouse locais; VPS/R2 pendentes.
+- F-GXAI-007: Supabase frontend removido no tip.
+- Parecer vigente: project_state/audits/parecer-p04-estrutura-fronteiras.md
