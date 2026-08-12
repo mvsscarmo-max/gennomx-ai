@@ -12,3 +12,4 @@
 | T-008 | futuro | DRY-6: agendar pós-processamento após primeira ingestão validada | bloqueada por T-007 |
 | T-009 | futuro | INGEST-5: ANVISA, indicações, empresas e PMC | bloqueada por T-007 |
 | T-010 | futuro | Preparar R2 atrás do contrato S3-compatible | bloqueada por credenciais/aprovação |
+| T-011 | ad-hoc / D-080 raiz | Registrar evidência local do parecer P0.4 (estrutura e fronteiras) | concluída |

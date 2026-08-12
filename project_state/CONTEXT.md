@@ -1,6 +1,6 @@
 # CONTEXT - GennomX AI
 
-**Atualizado:** 2026-07-20
+**Atualizado:** 2026-08-12
 **Protocolo:** VLAEG 2.0
 **Plano ativo:** nenhum
 **Ultimo plano concluido:** `plans/PLAN-001-platform-auth-dry7-reconciliacao.md`
@@ -20,6 +20,7 @@ Não gera relatórios finais. O estado v1 foi preservado em `archive/v1/`.
 - DRY-7: primeiro incremento CT.gov por fixtures implementado para endpoints, resultados e adverse events.
 - DRY-6 e restante de INGEST-5: bloqueados até validação real do backbone.
 - Gates locais: backend, frontend, E2E e auditorias de dependencias aprovados.
+- **P0.4 (2026-08-12):** T-011 — parecer local @ `92cf664` (tip impl. `3bbfa56`); residual D-080 da raiz atendido.
 
 ## Fronteiras
 
