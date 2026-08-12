@@ -1,11 +1,15 @@
 """Shared pytest fixtures."""
 
 import asyncio
+import os
 from typing import Any
 from unittest.mock import AsyncMock
 
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
+
+# Settings are instantiated by application modules during test collection.
+os.environ["STORAGE_BACKEND"] = "minio"
 
 
 @pytest.fixture(scope="session")
@@ -57,9 +61,12 @@ def override_settings(monkeypatch):
 
     get_settings.cache_clear()
     monkeypatch.setenv("DATABASE_URL", "postgresql+asyncpg://test:test@localhost/test")
-    monkeypatch.setenv("SUPABASE_URL", "https://test.supabase.co")
-    monkeypatch.setenv("SUPABASE_ANON_KEY", "test-anon-key")
-    monkeypatch.setenv("SUPABASE_SERVICE_ROLE_KEY", "test-service-key")
+    monkeypatch.setenv("AUTH_ADMIN_EMAIL", "admin@example.com")
+    monkeypatch.setenv("AUTH_ADMIN_PASSWORD", "test-admin-password")
+    monkeypatch.setenv("AUTH_JWT_SECRET", "test-jwt-secret-32-chars-minimum!!!")
+    monkeypatch.setenv("MINIO_ENDPOINT_URL", "http://minio:9000")
+    monkeypatch.setenv("MINIO_ACCESS_KEY_ID", "test-minio-access")
+    monkeypatch.setenv("MINIO_SECRET_ACCESS_KEY", "test-minio-secret")
     monkeypatch.setenv("API_SECRET_KEY", "test-secret-key-32-chars-minimum!!")
     monkeypatch.setenv("REDIS_URL", "redis://localhost:6379/0")
     monkeypatch.setenv("MCP_TOKEN_CHATGPT", "test-chatgpt-token")

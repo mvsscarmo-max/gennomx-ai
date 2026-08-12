@@ -44,7 +44,16 @@ class TestJobTracker:
         assert json.loads(params["metadata"]) == {"source": "clinicaltrials_gov"}
         assert json.loads(params["error_detail"])["errors"][0]["type"] == "schema_error"
         source_params = mock_db.execute.call_args_list[1][0][1]
-        assert source_params == {
-            "slug": "clinicaltrials_gov",
-            "connector_status": "error",
-        }
+        assert source_params == {"slug": "clinicaltrials_gov"}
+        assert "connector_status = 'active'" in str(mock_db.execute.call_args_list[1][0][0])
+
+    async def test_dry_run_does_not_update_data_source(self, mock_db):
+        result = ConnectorResult("clinicaltrials_gov")
+        result.metadata = {"dry_run": True}
+        result.finish()
+
+        await JobTracker(mock_db).complete_job(
+            str(uuid4()), result, status="success", update_source=False
+        )
+
+        assert mock_db.execute.await_count == 1

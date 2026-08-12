@@ -1,0 +1,18 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT00000008",
+      "briefTitle": "Fixture study without posted results"
+    },
+    "statusModule": {"overallStatus": "RECRUITING"},
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {"name": "Fixture Biotech"}
+    },
+    "outcomesModule": {
+      "primaryOutcomes": [
+        {"measure": "Progression-free survival", "timeFrame": "Up to 24 months"}
+      ]
+    }
+  },
+  "hasResults": false
+}

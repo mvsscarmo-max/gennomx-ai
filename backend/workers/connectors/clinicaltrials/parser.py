@@ -34,6 +34,9 @@ class ParsedTrial:
         self.sex: str | None = None
         self.primary_outcomes: list[dict] = []
         self.secondary_outcomes: list[dict] = []
+        self.result_outcomes: list[dict] = []
+        self.adverse_events: list[dict] = []
+        self.adverse_event_groups: dict[str, dict] = {}
         self.has_results: bool = False
 
 
@@ -54,7 +57,11 @@ class ClinicalTrialsParser:
         self._parse_locations(trial, protocol.get("contactsLocationsModule", {}))
         self._parse_outcomes(trial, protocol.get("outcomesModule", {}))
 
-        trial.has_results = "resultsSection" in raw
+        results = raw.get("resultsSection")
+        trial.has_results = isinstance(results, dict) and bool(results)
+        if isinstance(results, dict) and results:
+            self._parse_result_outcomes(trial, results.get("outcomeMeasuresModule", {}))
+            self._parse_adverse_events(trial, results.get("adverseEventsModule", {}))
 
         return trial
 
@@ -150,6 +157,60 @@ class ClinicalTrialsParser:
             }
             for o in module.get("secondaryOutcomes", [])
         ]
+
+    def _parse_result_outcomes(self, trial: ParsedTrial, module: dict) -> None:
+        trial.result_outcomes = [
+            {
+                "type": outcome.get("type"),
+                "title": outcome.get("title"),
+                "description": outcome.get("description"),
+                "timeframe": outcome.get("timeFrame"),
+                "population": outcome.get("populationDescription"),
+                "units": outcome.get("units"),
+                "param_type": outcome.get("paramType"),
+                "dispersion_type": outcome.get("dispersionType"),
+                "groups": outcome.get("groups", []),
+                "denoms": outcome.get("denoms", []),
+                "classes": outcome.get("classes", []),
+                "analyses": outcome.get("analyses", []),
+                "raw": outcome,
+            }
+            for outcome in module.get("outcomeMeasures", [])
+            if outcome.get("title")
+        ]
+
+    def _parse_adverse_events(self, trial: ParsedTrial, module: dict) -> None:
+        groups = {
+            group.get("id"): group for group in module.get("eventGroups", []) if group.get("id")
+        }
+        trial.adverse_event_groups = groups
+        parsed_events: list[dict] = []
+        for field, seriousness in (
+            ("seriousEvents", "serious"),
+            ("otherEvents", "non_serious"),
+        ):
+            for event in module.get(field, []):
+                term = event.get("term")
+                if not term:
+                    continue
+                for stat in event.get("stats", []):
+                    group_id = stat.get("groupId")
+                    parsed_events.append(
+                        {
+                            "term": term,
+                            "organ_system": event.get("organSystem"),
+                            "source_vocabulary": event.get("sourceVocabulary"),
+                            "assessment_type": event.get("assessmentType"),
+                            "seriousness": seriousness,
+                            "group_id": group_id,
+                            "group": groups.get(group_id, {}),
+                            "num_events": stat.get("numEvents"),
+                            "num_affected": stat.get("numAffected"),
+                            "num_at_risk": stat.get("numAtRisk"),
+                            "raw": {"event": event, "stat": stat},
+                        }
+                    )
+        trial.adverse_events = parsed_events
 
     @staticmethod
     def _normalize_phases(phases: list[str]) -> str | None:

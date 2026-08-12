@@ -1,5 +1,16 @@
 # 05 — Segurança, Autenticação, Governança e Compliance
 
+## Estado vigente de identidade e storage — 2026-07-20
+
+- JWT local HS256 e chave interna continuam válidos independentemente da federação.
+- Platform Auth é aditivo e somente funciona com `PLATFORM_AUTH_ENABLED=true`; valida RS256,
+  issuer, audience, exp, iat, jti, sub, `kind=internal_admin`, tenant interno, app `ai` e scopes.
+- Scopes mínimos: `ai:read`, `ai:curate`, `ai:ingest:dry_run`, `ai:ingest:run`, `ai:security` e
+  `ai:admin`; `ai:admin` satisfaz ações do módulo.
+- Tokens MCP continuam em autenticador próprio (`X-MCP-Token`) e não aceitam sessão administrativa.
+- PostgreSQL/pgvector na VPS é o banco alvo; MinIO/S3-compatible é o storage runtime; R2 é futuro.
+- Menções posteriores a Supabase descrevem decisões históricas substituídas, não runtime atual.
+
 ## Controles operacionais implementados — 2026-06-21
 
 - correção humana exige admin, motivo e `EvidenceSnippet`; aprovação encerra a assertion anterior
@@ -21,7 +32,7 @@
   removidos inclusive das policies legadas reaplicadas pela migração `0003`;
 - a chave interna usa comparação constante e representa `service`, sem herdar privilégios admin;
 - autenticação MCP duplicada e não utilizada foi removida;
-- SSR usa o JWT Supabase do usuário, sem cache compartilhado e sem chave administrativa em
+- SSR usa o JWT administrativo do usuário, sem cache compartilhado e sem chave administrativa em
   produção; `API_INTERNAL_KEY` no frontend só é aceito no bypass E2E não produtivo.
 
 ## Política de edição, exclusão e correção factual — 2026-06-20
@@ -109,8 +120,8 @@ A GennomX AI deve considerar ameaças como:
 
 MVP:
 
-- Supabase Auth ou autenticação equivalente;
-- login por e-mail/senha ou magic link;
+- JWT local próprio por e-mail/senha;
+- Platform Auth administrativo opcional por feature flag;
 - MFA opcional, recomendado para admin;
 - sessão curta para áreas administrativas;
 - tokens MCP separados da sessão web;
@@ -143,15 +154,11 @@ Futuro:
 - permissões por organização;
 - isolamento por tenant.
 
-## 12.5 Supabase/PostgreSQL e Row Level Security
+## 12.5 PostgreSQL VPS e Row Level Security
 
-Mesmo sem multiusuário completo no MVP, recomenda-se desenhar tabelas com preparo para RLS.
-
-### Integração operacional com Supabase
-
-Até o cutover banco-only, o PostgreSQL da Supabase permanece como origem de verdade. Após o cutover, o PostgreSQL/pgvector na VPS passa a ser o banco primário. Em ambos os casos, a aplicação não deve usar a role `postgres`,
-`anon`, `authenticated` ou `service_role` como usuário de conexão do backend. O bootstrap
-operacional está em `infra/supabase/bootstrap_roles.sql` e cria quatro roles dedicadas:
+Mesmo sem multiusuário completo no MVP, as tabelas mantêm RLS. A aplicação não usa `postgres`
+como conexão de runtime. O bootstrap vigente está em `infra/postgres/bootstrap_roles_vps.sql` e
+cria quatro roles dedicadas:
 
 | Role | Uso | Permissão esperada |
 |---|---|---|
@@ -160,23 +167,17 @@ operacional está em `infra/supabase/bootstrap_roles.sql` e cria quatro roles de
 | `gennomx_app` | FastAPI/dashboard/MCP HTTP | leitura ampla e inserts operacionais restritos, como logs MCP, eventos de segurança e correções manuais |
 | `gennomx_readonly` | inspeção controlada | leitura sem escrita |
 
-Variáveis obrigatórias para o banco principal e para Supabase Auth/Storage temporários:
+Variáveis obrigatórias para o banco principal:
 
-- `DATABASE_URL`: role `gennomx_app`, apontando para Supabase antes do cutover ou para PostgreSQL VPS depois.
-- `WORKER_DATABASE_URL`: role `gennomx_worker`, apontando para a mesma origem de verdade do banco.
+- `DATABASE_URL`: role `gennomx_app`, apontando para PostgreSQL VPS.
+- `WORKER_DATABASE_URL`: role `gennomx_worker`, apontando para a mesma base.
 - `DATABASE_URL_SYNC`: role `gennomx_migrator`, para Alembic/migrações e validações controladas.
-- `SUPABASE_URL`, `SUPABASE_PROJECT_REF`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` e
-  `SUPABASE_JWKS_URL`, mantidos apenas em variáveis protegidas. `SUPABASE_JWT_SECRET` permanece
-  somente como fallback legado HS256 durante transição.
 
-As URLs devem exigir TLS (`sslmode=require` ou `ssl=require`). O runtime normaliza URLs Supabase
-com `sslmode=require` para o driver asyncpg, enquanto Alembic usa URL síncrona compatível com
-psycopg2.
+As URLs de produção exigem TLS (`sslmode=require` ou `ssl=require`).
 
 Fluxo de ativação:
 
-1. Executar `infra/supabase/bootstrap_roles.sql` no Supabase SQL Editor com senhas reais fora do
-   repositório.
+1. Executar `infra/postgres/bootstrap_roles_vps.sql` com senhas reais fora do repositório.
 2. Configurar `.env` a partir de `.env.example`.
 3. Rodar `alembic upgrade head` no diretório `backend`.
 4. Reexecutar o bloco final de grants do bootstrap após migrações que criem novas tabelas, se as
@@ -194,9 +195,10 @@ Regras:
 - testar políticas de RLS;
 - criar testes específicos de autorização negativa.
 
-## 12.5A PostgreSQL VPS e Supabase Auth/Storage Temporários
+## 12.5A Registro histórico da migração de 2026-07-09
 
-Decisão de 2026-07-09: a primeira migração substitui somente o banco PostgreSQL hospedado na Supabase por PostgreSQL/pgvector na VPS Hostinger. Supabase Auth/JWKS e Supabase Storage permanecem temporariamente para preservar login, validação JWT e raw payload auditável.
+Esta seção preserva o racional da primeira etapa banco-only. A dependência temporária de Supabase
+foi posteriormente removida do runtime por JWT próprio e MinIO/S3-compatible.
 
 Regras obrigatórias do banco VPS:
 
@@ -210,7 +212,8 @@ Regras obrigatórias do banco VPS:
 - RLS/policies existentes não devem ser relaxadas para facilitar restore; quando necessário, o restore usa usuário administrativo em janela controlada e os grants são reaplicados depois.
 - Backups automáticos e restore testado tornam-se responsabilidade operacional da GennomX antes do cutover.
 
-Objetos Supabase-specific fora do escopo do dump da aplicação: schemas/roles de `auth`, `storage`, `realtime`, `graphql_public`, `vault`, `anon`, `authenticated`, `service_role` e roles administrativas Supabase. Esses objetos continuam na Supabase enquanto Auth/Storage estiverem ativos e não devem ser recriados no PostgreSQL VPS nesta rodada.
+Objetos Supabase-specific nunca foram recriados no PostgreSQL VPS e permanecem somente como parte
+do inventário histórico da origem.
 
 `backend/app/config.py` falha fechado em produção se `DATABASE_PROVIDER=vps_postgres` for combinado com URLs de banco Supabase, reduzindo o risco de cutover parcial/incoerente.
 
@@ -498,7 +501,7 @@ MCP expõe ferramentas a modelos externos. Deve haver autenticação, autorizaç
 ### Next.js
 
 - não armazenar segredos no frontend;
-- não expor service role key do Supabase;
+- não expor credenciais de banco ou object storage;
 - usar apenas chaves públicas apropriadas ao cliente;
 - operações sensíveis devem passar pela FastAPI;
 - proteger rotas administrativas.
@@ -554,7 +557,7 @@ Estado em 2026-06-20:
 - prompts do sistema instruem o modelo a extrair/classificar, não a executar instruções do texto-fonte;
 - o LLM interno não decide fonte vencedora, merge, correção ou exclusão;
 - provedor configurável via `LLM_PROVIDER` (MVP: `opencode`); adaptador permite troca futura.
-# Correção fase 1 — identidade e configuração (2026-06-20)
+# Registro histórico — correção fase 1 de identidade (2026-06-20)
 
 - Segredos administrativos deixaram de possuir valores padrão utilizáveis.
 - `ENVIRONMENT=production` falha no startup se banco, JWT, chave interna, token MCP ou CORS estiverem ausentes/inseguros.
@@ -618,3 +621,8 @@ Estado em 2026-06-20:
   consistente com a diretriz de tratar documentos externos como conteúdo não confiável
   (`AGENTS.md` §12). Achado colateral: `query_key is None` não era checado antes de paginar a
   busca — corrigido junto.
+
+## Plataforma GennomX - auth administrativo e MCP separado
+
+Implementado no backend em 2026-07-20 conforme o estado vigente no início deste documento. R2
+permanece futuro; MinIO continua sendo o runtime storage.

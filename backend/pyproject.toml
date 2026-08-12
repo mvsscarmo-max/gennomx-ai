@@ -20,11 +20,6 @@ dependencies = [
     "alembic>=1.13.0",
     "psycopg2-binary>=2.9.9",  # sync driver para alembic
 
-    # Supabase
-    "supabase>=2.4.0",
-    "gotrue>=2.4.0",
-    "storage3>=0.7.0",
-
     # Validation
     "pydantic>=2.7.0",
     "pydantic-settings>=2.2.0",
@@ -55,7 +50,6 @@ dependencies = [
     # Parsing
     "beautifulsoup4>=4.12.0",
     "lxml>=5.2.0",
-    "pypdf2>=3.0.0",
     "defusedxml>=0.7.1",  # hardened XML parsing for connector API responses (XXE mitigation)
 
     # Logging
@@ -79,7 +73,7 @@ llm = [
 mcp = [
     # Isolated stdio process; kept out of the FastAPI runtime to avoid coupling
     # the two servers' Starlette dependency lifecycles.
-    "mcp>=1.0.0",
+    "mcp>=1.28.1",
 ]
 dev = [
     "pytest>=8.0.0",

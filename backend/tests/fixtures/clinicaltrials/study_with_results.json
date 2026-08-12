@@ -1,0 +1,123 @@
+{
+  "protocolSection": {
+    "identificationModule": {
+      "nctId": "NCT00000007",
+      "briefTitle": "Fixture study with posted results"
+    },
+    "statusModule": {
+      "overallStatus": "COMPLETED",
+      "lastUpdatePostDateStruct": {"date": "2026-06-30"}
+    },
+    "sponsorCollaboratorsModule": {
+      "leadSponsor": {"name": "Fixture Biotech"}
+    },
+    "outcomesModule": {
+      "primaryOutcomes": [
+        {
+          "measure": "Change from baseline score",
+          "description": "Negative values indicate improvement.",
+          "timeFrame": "Week 12"
+        }
+      ],
+      "secondaryOutcomes": [
+        {
+          "measure": "Overall response",
+          "description": "Prespecified secondary outcome.",
+          "timeFrame": "Week 12"
+        }
+      ]
+    }
+  },
+  "resultsSection": {
+    "outcomeMeasuresModule": {
+      "outcomeMeasures": [
+        {
+          "type": "PRIMARY",
+          "title": "Change from baseline score",
+          "description": "Observed change; negative values are retained literally.",
+          "populationDescription": "Participants with an evaluable Week 12 assessment",
+          "paramType": "MEAN",
+          "dispersionType": "STANDARD_DEVIATION",
+          "units": "points",
+          "timeFrame": "Week 12",
+          "groups": [
+            {"id": "FG000", "title": "Treatment", "description": "Investigational arm"},
+            {"id": "FG001", "title": "Control", "description": "Control arm"}
+          ],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "measurements": [
+                    {"groupId": "FG000", "value": "-2.4", "spread": "1.1", "numParticipants": 42},
+                    {"groupId": "FG001", "value": "-0.3", "spread": "1.0", "numParticipants": 40}
+                  ]
+                }
+              ]
+            }
+          ],
+          "analyses": [
+            {
+              "paramType": "MEAN DIFFERENCE",
+              "paramValue": "-2.1",
+              "pValue": "0.004",
+              "ciLowerLimit": "-3.0",
+              "ciUpperLimit": "-1.2",
+              "groups": ["FG000", "FG001"]
+            }
+          ]
+        },
+        {
+          "type": "SECONDARY",
+          "title": "Overall response",
+          "populationDescription": "Intent-to-treat population",
+          "paramType": "COUNT_OF_PARTICIPANTS",
+          "units": "participants",
+          "timeFrame": "Week 12",
+          "groups": [{"id": "FG000", "title": "Treatment"}],
+          "classes": [
+            {
+              "categories": [
+                {
+                  "title": "Not estimable",
+                  "measurements": [
+                    {"groupId": "FG000", "value": "Not estimable", "numParticipants": 42}
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "adverseEventsModule": {
+      "timeFrame": "Through Week 12",
+      "eventGroups": [
+        {"id": "FG000", "title": "Treatment", "seriousNumAtRisk": 42, "otherNumAtRisk": 42},
+        {"id": "FG001", "title": "Control", "seriousNumAtRisk": 40, "otherNumAtRisk": 40}
+      ],
+      "seriousEvents": [
+        {
+          "term": "Pneumonia",
+          "organSystem": "Respiratory disorders",
+          "sourceVocabulary": "MedDRA",
+          "stats": [
+            {"groupId": "FG000", "numEvents": 1, "numAffected": 1, "numAtRisk": 42},
+            {"groupId": "FG001", "numEvents": 0, "numAffected": 0, "numAtRisk": 40}
+          ]
+        }
+      ],
+      "otherEvents": [
+        {
+          "term": "Headache",
+          "organSystem": "Nervous system disorders",
+          "sourceVocabulary": "MedDRA",
+          "stats": [
+            {"groupId": "FG000", "numEvents": 5, "numAffected": 4, "numAtRisk": 42}
+          ]
+        }
+      ]
+    }
+  },
+  "hasResults": true
+}

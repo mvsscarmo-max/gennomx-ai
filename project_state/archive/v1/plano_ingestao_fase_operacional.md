@@ -1,4 +1,4 @@
-# Plano operacional — ingestão recorrente e data warehouse proprietário
+# Arquivo VLAEG v1 - ingestao recorrente e data warehouse
 
 **Data:** 2026-07-09 (segunda sessão de continuidade)
 **Solicitante:** Marcus

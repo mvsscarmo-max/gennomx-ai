@@ -2,7 +2,7 @@
 # Adaptacao de infra/docker-compose.vps-app.yml sem env_file (Hostinger injeta
 # variaveis via environment do projeto). Build context relativo a ./backend.
 #
-# Sobe Redis + worker + beat. API sob profile `api` (nao sobe por default).
+# Sobe Redis + MinIO + worker + beat. API sob profile `api` (nao sobe por default).
 # Conecta-se a gennomx-ai-postgres-ready-private (external) para acessar o
 # Postgres da stack gennomx-ai-postgres-ready.
 #
@@ -32,6 +32,24 @@ services:
     networks:
       - gennomx_ai_app
 
+  minio:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
+    command:
+      - "server"
+      - "/data"
+      - "--console-address"
+      - ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY_ID:?Set MINIO_ACCESS_KEY_ID}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_ACCESS_KEY:?Set MINIO_SECRET_ACCESS_KEY}
+    volumes:
+      - gennomx_ai_minio_data:/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+
   worker:
     build:
       context: https://github.com/mvsscarmo-max/gennomx-ai.git#master:backend
@@ -48,15 +66,21 @@ services:
       REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
-      STORAGE_BACKEND: ${STORAGE_BACKEND:-supabase}
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
-      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
-      SUPABASE_STORAGE_BUCKET_RAW: ${SUPABASE_STORAGE_BUCKET_RAW:-gennomx-raw}
-      SUPABASE_STORAGE_BUCKET_PROCESSED: ${SUPABASE_STORAGE_BUCKET_PROCESSED:-gennomx-processed}
-      SUPABASE_STORAGE_BUCKET_EVIDENCE: ${SUPABASE_STORAGE_BUCKET_EVIDENCE:-gennomx-evidence}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:?AUTH_ADMIN_EMAIL must be set}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
+      AUTH_ADMIN_PASSWORD_HASH: ${AUTH_ADMIN_PASSWORD_HASH:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ALGORITHM: ${AUTH_JWT_ALGORITHM:-HS256}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-gennomx-ai}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE:-gennomx-dashboard}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL:-http://minio:9000}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID:?MINIO_ACCESS_KEY_ID must be set}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY:?MINIO_SECRET_ACCESS_KEY must be set}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW:-gennomx-ai-raw}
+      MINIO_BUCKET_PROCESSED: ${MINIO_BUCKET_PROCESSED:-gennomx-ai-processed}
+      MINIO_BUCKET_EVIDENCE: ${MINIO_BUCKET_EVIDENCE:-gennomx-ai-evidence}
       NCBI_API_KEY: ${NCBI_API_KEY:-}
       NCBI_EMAIL: ${NCBI_EMAIL:-}
       OPENFDA_API_KEY: ${OPENFDA_API_KEY:-}
@@ -97,15 +121,21 @@ services:
       REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
-      STORAGE_BACKEND: ${STORAGE_BACKEND:-supabase}
-      SUPABASE_URL: ${SUPABASE_URL:-}
-      SUPABASE_PROJECT_REF: ${SUPABASE_PROJECT_REF:-}
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
-      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY:-}
-      SUPABASE_JWKS_URL: ${SUPABASE_JWKS_URL:-}
-      SUPABASE_STORAGE_BUCKET_RAW: ${SUPABASE_STORAGE_BUCKET_RAW:-gennomx-raw}
-      SUPABASE_STORAGE_BUCKET_PROCESSED: ${SUPABASE_STORAGE_BUCKET_PROCESSED:-gennomx-processed}
-      SUPABASE_STORAGE_BUCKET_EVIDENCE: ${SUPABASE_STORAGE_BUCKET_EVIDENCE:-gennomx-evidence}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:?AUTH_ADMIN_EMAIL must be set}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
+      AUTH_ADMIN_PASSWORD_HASH: ${AUTH_ADMIN_PASSWORD_HASH:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ALGORITHM: ${AUTH_JWT_ALGORITHM:-HS256}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-gennomx-ai}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE:-gennomx-dashboard}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL:-http://minio:9000}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID:?MINIO_ACCESS_KEY_ID must be set}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY:?MINIO_SECRET_ACCESS_KEY must be set}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW:-gennomx-ai-raw}
+      MINIO_BUCKET_PROCESSED: ${MINIO_BUCKET_PROCESSED:-gennomx-ai-processed}
+      MINIO_BUCKET_EVIDENCE: ${MINIO_BUCKET_EVIDENCE:-gennomx-ai-evidence}
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
       LOG_FORMAT: ${LOG_FORMAT:-json}
     command:
@@ -125,6 +155,7 @@ services:
 
 volumes:
   gennomx_ai_redis_data:
+  gennomx_ai_minio_data:
 
 networks:
   gennomx_ai_app:

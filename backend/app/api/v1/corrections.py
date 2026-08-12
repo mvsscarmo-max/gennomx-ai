@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import CurrentUser, require_admin
+from app.auth.dependencies import CurrentUser, require_curate
 from app.database import get_db
 from app.services.correction_service import CorrectionService
 
@@ -31,7 +31,7 @@ class CorrectionReview(BaseModel):
 async def propose_correction(
     payload: CorrectionProposal,
     db: Annotated[AsyncSession, Depends(get_db)],
-    user: Annotated[CurrentUser, Depends(require_admin)],
+    user: Annotated[CurrentUser, Depends(require_curate)],
 ) -> dict:
     return await CorrectionService(db).propose(
         entity_type=payload.entity_type,
@@ -50,7 +50,7 @@ async def review_correction(
     correction_id: UUID,
     payload: CorrectionReview,
     db: Annotated[AsyncSession, Depends(get_db)],
-    user: Annotated[CurrentUser, Depends(require_admin)],
+    user: Annotated[CurrentUser, Depends(require_curate)],
 ) -> dict:
     return await CorrectionService(db).review(
         correction_id=str(correction_id),

@@ -20,6 +20,7 @@ from workers.base.staging import (
     validate_trial_record,
 )
 from workers.persistence.assets import _upsert_drug_assets_from_trial
+from workers.persistence.clinical_outcomes import persist_clinical_outcomes
 from workers.persistence.common import (
     DECISION_ENGINE,
     _get_data_source_id,
@@ -116,6 +117,7 @@ async def _persist_trials(db, result: ConnectorResult, normalizer) -> None:
                 else:
                     trial_id = ""
                     operation = "inserted"
+                    decision = None
                 if operation != "skipped":
                     normalized["drug_asset_ids"] = await _upsert_drug_assets_from_trial(
                         db=db,
@@ -136,6 +138,22 @@ async def _persist_trials(db, result: ConnectorResult, normalizer) -> None:
                     await _insert_trial_assertions(
                         db, trial_id, source_document_id, parsed.nct_id, normalized
                     )
+                if operation != "skipped" or (
+                    row and decision and decision.action == PersistenceAction.NOOP
+                ):
+                    granular_counts = await persist_clinical_outcomes(
+                        db,
+                        trial_id=trial_id,
+                        source_document_id=source_document_id,
+                        parsed=parsed,
+                        raw=raw,
+                    )
+                    aggregate = result.metadata.setdefault(
+                        "clinical_outcomes",
+                        {"endpoints": 0, "results": 0, "adverse_events": 0},
+                    )
+                    for key, value in granular_counts.items():
+                        aggregate[key] += value
             if operation == "updated":
                 result.records_updated += 1
             elif operation == "inserted":

@@ -68,8 +68,67 @@ from workers.persistence.trials import (  # noqa: F401
     _upsert_source_document,
     link_existing_trials_to_assets,
 )
+from workers.storage.raw_payload import preflight_raw_storage
 
 settings = get_settings()
+
+
+async def _is_source_enabled(db, source_slug: str) -> bool:
+    from sqlalchemy import text
+
+    row = (
+        await db.execute(
+            text("SELECT is_enabled FROM data_sources WHERE slug = :slug"),
+            {"slug": source_slug},
+        )
+    ).fetchone()
+    return bool(row and row[0])
+
+
+async def _normalize_dry_run_page(
+    payloads: list[dict], normalizer, counters: dict[str, int]
+) -> None:
+    """Exercise normalizers without invoking persistence or raw storage."""
+    for payload in payloads:
+        counters["parsed"] += 1
+        try:
+            normalizer.normalize(payload["parsed"])
+            counters["accepted"] += 1
+        except Exception:
+            counters["rejected"] += 1
+
+
+def _finalize_dry_run(result: ConnectorResult, counters: dict[str, int]) -> None:
+    result.records_rejected += counters["rejected"]
+    result.metadata.update(
+        {
+            "dry_run": True,
+            "dry_run_counts": counters,
+        }
+    )
+
+
+async def _create_tracked_job(
+    db,
+    source_slug: str,
+    requested_job_type: str,
+    celery_task_id: str | None,
+    dry_run: bool,
+) -> tuple[JobTracker, str] | None:
+    if not dry_run and not await _is_source_enabled(db, source_slug):
+        return None
+    if not dry_run:
+        # Fail before fetching external records when the immutable raw-audit layer is unavailable.
+        await preflight_raw_storage()
+    tracker = JobTracker(db)
+    job_id = await tracker.create_job(
+        source_slug,
+        "dry_run" if dry_run else requested_job_type,
+        celery_task_id=celery_task_id,
+        metadata={"dry_run": dry_run, "requested_job_type": requested_job_type},
+    )
+    await tracker.start_job(job_id)
+    return tracker, job_id
 
 
 @shared_task(
@@ -80,6 +139,7 @@ def run_pubmed_ingest(
     job_type: str = "incremental",
     query: str | None = None,
     max_records: int | None = None,
+    dry_run: bool = False,
 ):
     """Ingest publications from PubMed E-utilities API."""
     from workers.connectors.pubmed.connector import PubMedConnector
@@ -93,15 +153,22 @@ def run_pubmed_ingest(
         async with async_session() as db:
             if settings.is_production:
                 await assert_database_role(db, "gennomx_worker")
-            tracker = JobTracker(db)
-            job_id = await tracker.create_job("pubmed", job_type, celery_task_id=self.request.id)
-            await tracker.start_job(job_id)
+            tracked_job = await _create_tracked_job(
+                db, "pubmed", job_type, self.request.id, dry_run
+            )
+            if tracked_job is None:
+                return {"status": "skipped", "reason": "source_disabled", "source_slug": "pubmed"}
+            tracker, job_id = tracked_job
 
             try:
-                updated_since = await _get_last_successful_run(db, "pubmed")
+                updated_since = None if dry_run else await _get_last_successful_run(db, "pubmed")
                 persisted_counts = {"inserted": 0, "updated": 0, "rejected": 0, "skipped": 0}
+                dry_counts = {"parsed": 0, "accepted": 0, "rejected": 0}
 
                 async def persist_page(payloads: list[dict]) -> None:
+                    if dry_run:
+                        await _normalize_dry_run_page(payloads, normalizer, dry_counts)
+                        return
                     page_result = ConnectorResult("pubmed")
                     page_result.raw_payloads = payloads
                     await _persist_publications(db, page_result, normalizer)
@@ -121,20 +188,31 @@ def run_pubmed_ingest(
                 result.records_updated += persisted_counts["updated"]
                 result.records_rejected += persisted_counts["rejected"]
                 result.records_skipped += persisted_counts["skipped"]
+                if dry_run:
+                    _finalize_dry_run(result, dry_counts)
                 if _has_fatal_connector_error(result):
                     raise RuntimeError(result.errors[0]["message"])
-                await tracker.complete_job(job_id, result)
+                await tracker.complete_job(
+                    job_id,
+                    result,
+                    status="success" if result.success else "partial",
+                    update_source=not dry_run,
+                )
                 return {
                     "job_id": job_id,
                     "status": "success" if result.success else "partial",
                     "inserted": result.records_inserted,
+                    "dry_run": dry_run,
+                    "counts": result.metadata.get("dry_run_counts"),
                 }
 
             except Exception as e:
                 fail_result = ConnectorResult("pubmed")
                 fail_result.add_error("task_error", str(e))
                 fail_result.finish()
-                await tracker.complete_job(job_id, fail_result)
+                await tracker.complete_job(
+                    job_id, fail_result, status="failed", update_source=not dry_run
+                )
                 raise
 
     try:
@@ -154,6 +232,7 @@ def run_clinicaltrials_ingest(
     conditions: list | None = None,
     interventions: list | None = None,
     max_records: int | None = None,
+    dry_run: bool = False,
 ):
     """Ingest clinical trials from ClinicalTrials.gov API v2."""
     from workers.connectors.clinicaltrials.connector import ClinicalTrialsConnector
@@ -167,17 +246,28 @@ def run_clinicaltrials_ingest(
         async with async_session() as db:
             if settings.is_production:
                 await assert_database_role(db, "gennomx_worker")
-            tracker = JobTracker(db)
-            job_id = await tracker.create_job(
-                "clinicaltrials_gov", job_type, celery_task_id=self.request.id
+            tracked_job = await _create_tracked_job(
+                db, "clinicaltrials_gov", job_type, self.request.id, dry_run
             )
-            await tracker.start_job(job_id)
+            if tracked_job is None:
+                return {
+                    "status": "skipped",
+                    "reason": "source_disabled",
+                    "source_slug": "clinicaltrials_gov",
+                }
+            tracker, job_id = tracked_job
 
             try:
-                updated_since = await _get_last_successful_run(db, "clinicaltrials_gov")
+                updated_since = (
+                    None if dry_run else await _get_last_successful_run(db, "clinicaltrials_gov")
+                )
                 persisted_counts = {"inserted": 0, "updated": 0, "rejected": 0, "skipped": 0}
+                dry_counts = {"parsed": 0, "accepted": 0, "rejected": 0}
 
                 async def persist_page(payloads: list[dict]) -> None:
+                    if dry_run:
+                        await _normalize_dry_run_page(payloads, normalizer, dry_counts)
+                        return
                     page_result = ConnectorResult("clinicaltrials_gov")
                     page_result.raw_payloads = payloads
                     await _persist_trials(db, page_result, normalizer)
@@ -199,20 +289,31 @@ def run_clinicaltrials_ingest(
                 result.records_updated += persisted_counts["updated"]
                 result.records_rejected += persisted_counts["rejected"]
                 result.records_skipped += persisted_counts["skipped"]
+                if dry_run:
+                    _finalize_dry_run(result, dry_counts)
                 if _has_fatal_connector_error(result):
                     raise RuntimeError(result.errors[0]["message"])
-                await tracker.complete_job(job_id, result)
+                await tracker.complete_job(
+                    job_id,
+                    result,
+                    status="success" if result.success else "partial",
+                    update_source=not dry_run,
+                )
                 return {
                     "job_id": job_id,
                     "status": "success" if result.success else "partial",
                     "inserted": result.records_inserted,
+                    "dry_run": dry_run,
+                    "counts": result.metadata.get("dry_run_counts"),
                 }
 
             except Exception as e:
                 fail_result = ConnectorResult("clinicaltrials_gov")
                 fail_result.add_error("task_error", str(e))
                 fail_result.finish()
-                await tracker.complete_job(job_id, fail_result)
+                await tracker.complete_job(
+                    job_id, fail_result, status="failed", update_source=not dry_run
+                )
                 raise
 
     try:
@@ -225,7 +326,9 @@ def run_clinicaltrials_ingest(
 @shared_task(
     bind=True, name="workers.tasks.ingest.run_openfda_ingest", queue="ingest", max_retries=3
 )
-def run_openfda_ingest(self, job_type: str = "incremental", max_records: int | None = None):
+def run_openfda_ingest(
+    self, job_type: str = "incremental", max_records: int | None = None, dry_run: bool = False
+):
     """Ingest drug approvals from the openFDA Drugs@FDA (drugsfda) API."""
     from workers.connectors.openfda.connector import OpenFDAConnector
     from workers.connectors.openfda.normalizer import OpenFDANormalizer
@@ -238,14 +341,21 @@ def run_openfda_ingest(self, job_type: str = "incremental", max_records: int | N
         async with async_session() as db:
             if settings.is_production:
                 await assert_database_role(db, "gennomx_worker")
-            tracker = JobTracker(db)
-            job_id = await tracker.create_job("openfda", job_type, celery_task_id=self.request.id)
-            await tracker.start_job(job_id)
+            tracked_job = await _create_tracked_job(
+                db, "openfda", job_type, self.request.id, dry_run
+            )
+            if tracked_job is None:
+                return {"status": "skipped", "reason": "source_disabled", "source_slug": "openfda"}
+            tracker, job_id = tracked_job
 
             try:
                 persisted_counts = {"inserted": 0, "updated": 0, "rejected": 0, "skipped": 0}
+                dry_counts = {"parsed": 0, "accepted": 0, "rejected": 0}
 
                 async def persist_page(payloads: list[dict]) -> None:
+                    if dry_run:
+                        await _normalize_dry_run_page(payloads, normalizer, dry_counts)
+                        return
                     page_result = ConnectorResult("openfda")
                     page_result.raw_payloads = payloads
                     await _persist_regulatory_approvals(db, page_result, normalizer, "openfda")
@@ -263,20 +373,31 @@ def run_openfda_ingest(self, job_type: str = "incremental", max_records: int | N
                 result.records_updated += persisted_counts["updated"]
                 result.records_rejected += persisted_counts["rejected"]
                 result.records_skipped += persisted_counts["skipped"]
+                if dry_run:
+                    _finalize_dry_run(result, dry_counts)
                 if _has_fatal_connector_error(result):
                     raise RuntimeError(result.errors[0]["message"])
-                await tracker.complete_job(job_id, result)
+                await tracker.complete_job(
+                    job_id,
+                    result,
+                    status="success" if result.success else "partial",
+                    update_source=not dry_run,
+                )
                 return {
                     "job_id": job_id,
                     "status": "success" if result.success else "partial",
                     "inserted": result.records_inserted,
+                    "dry_run": dry_run,
+                    "counts": result.metadata.get("dry_run_counts"),
                 }
 
             except Exception as e:
                 fail_result = ConnectorResult("openfda")
                 fail_result.add_error("task_error", str(e))
                 fail_result.finish()
-                await tracker.complete_job(job_id, fail_result)
+                await tracker.complete_job(
+                    job_id, fail_result, status="failed", update_source=not dry_run
+                )
                 raise
 
     try:
@@ -289,7 +410,9 @@ def run_openfda_ingest(self, job_type: str = "incremental", max_records: int | N
 @shared_task(
     bind=True, name="workers.tasks.ingest.run_dailymed_ingest", queue="ingest", max_retries=3
 )
-def run_dailymed_ingest(self, job_type: str = "incremental", max_records: int | None = None):
+def run_dailymed_ingest(
+    self, job_type: str = "incremental", max_records: int | None = None, dry_run: bool = False
+):
     """Ingest structured product labels (SPL) from DailyMed."""
     from workers.connectors.dailymed.connector import DailyMedConnector
     from workers.connectors.dailymed.normalizer import DailyMedNormalizer
@@ -302,14 +425,21 @@ def run_dailymed_ingest(self, job_type: str = "incremental", max_records: int | 
         async with async_session() as db:
             if settings.is_production:
                 await assert_database_role(db, "gennomx_worker")
-            tracker = JobTracker(db)
-            job_id = await tracker.create_job("dailymed", job_type, celery_task_id=self.request.id)
-            await tracker.start_job(job_id)
+            tracked_job = await _create_tracked_job(
+                db, "dailymed", job_type, self.request.id, dry_run
+            )
+            if tracked_job is None:
+                return {"status": "skipped", "reason": "source_disabled", "source_slug": "dailymed"}
+            tracker, job_id = tracked_job
 
             try:
                 persisted_counts = {"inserted": 0, "updated": 0, "rejected": 0, "skipped": 0}
+                dry_counts = {"parsed": 0, "accepted": 0, "rejected": 0}
 
                 async def persist_page(payloads: list[dict]) -> None:
+                    if dry_run:
+                        await _normalize_dry_run_page(payloads, normalizer, dry_counts)
+                        return
                     page_result = ConnectorResult("dailymed")
                     page_result.raw_payloads = payloads
                     await _persist_regulatory_approvals(db, page_result, normalizer, "dailymed")
@@ -327,20 +457,31 @@ def run_dailymed_ingest(self, job_type: str = "incremental", max_records: int | 
                 result.records_updated += persisted_counts["updated"]
                 result.records_rejected += persisted_counts["rejected"]
                 result.records_skipped += persisted_counts["skipped"]
+                if dry_run:
+                    _finalize_dry_run(result, dry_counts)
                 if _has_fatal_connector_error(result):
                     raise RuntimeError(result.errors[0]["message"])
-                await tracker.complete_job(job_id, result)
+                await tracker.complete_job(
+                    job_id,
+                    result,
+                    status="success" if result.success else "partial",
+                    update_source=not dry_run,
+                )
                 return {
                     "job_id": job_id,
                     "status": "success" if result.success else "partial",
                     "inserted": result.records_inserted,
+                    "dry_run": dry_run,
+                    "counts": result.metadata.get("dry_run_counts"),
                 }
 
             except Exception as e:
                 fail_result = ConnectorResult("dailymed")
                 fail_result.add_error("task_error", str(e))
                 fail_result.finish()
-                await tracker.complete_job(job_id, fail_result)
+                await tracker.complete_job(
+                    job_id, fail_result, status="failed", update_source=not dry_run
+                )
                 raise
 
     try:
@@ -353,7 +494,9 @@ def run_dailymed_ingest(self, job_type: str = "incremental", max_records: int | 
 @shared_task(
     bind=True, name="workers.tasks.ingest.run_opentargets_ingest", queue="ingest", max_retries=3
 )
-def run_opentargets_ingest(self, job_type: str = "incremental", max_records: int | None = None):
+def run_opentargets_ingest(
+    self, job_type: str = "incremental", max_records: int | None = None, dry_run: bool = False
+):
     """Ingest biological-target / disease-association records from Open Targets."""
     from workers.connectors.opentargets.connector import OpenTargetsConnector
     from workers.connectors.opentargets.normalizer import OpenTargetsNormalizer
@@ -366,16 +509,25 @@ def run_opentargets_ingest(self, job_type: str = "incremental", max_records: int
         async with async_session() as db:
             if settings.is_production:
                 await assert_database_role(db, "gennomx_worker")
-            tracker = JobTracker(db)
-            job_id = await tracker.create_job(
-                "open_targets", job_type, celery_task_id=self.request.id
+            tracked_job = await _create_tracked_job(
+                db, "open_targets", job_type, self.request.id, dry_run
             )
-            await tracker.start_job(job_id)
+            if tracked_job is None:
+                return {
+                    "status": "skipped",
+                    "reason": "source_disabled",
+                    "source_slug": "open_targets",
+                }
+            tracker, job_id = tracked_job
 
             try:
                 persisted_counts = {"inserted": 0, "updated": 0, "rejected": 0, "skipped": 0}
+                dry_counts = {"parsed": 0, "accepted": 0, "rejected": 0}
 
                 async def persist_page(payloads: list[dict]) -> None:
+                    if dry_run:
+                        await _normalize_dry_run_page(payloads, normalizer, dry_counts)
+                        return
                     page_result = ConnectorResult("open_targets")
                     page_result.raw_payloads = payloads
                     await _persist_targets(db, page_result, normalizer, "open_targets")
@@ -393,20 +545,31 @@ def run_opentargets_ingest(self, job_type: str = "incremental", max_records: int
                 result.records_updated += persisted_counts["updated"]
                 result.records_rejected += persisted_counts["rejected"]
                 result.records_skipped += persisted_counts["skipped"]
+                if dry_run:
+                    _finalize_dry_run(result, dry_counts)
                 if _has_fatal_connector_error(result):
                     raise RuntimeError(result.errors[0]["message"])
-                await tracker.complete_job(job_id, result)
+                await tracker.complete_job(
+                    job_id,
+                    result,
+                    status="success" if result.success else "partial",
+                    update_source=not dry_run,
+                )
                 return {
                     "job_id": job_id,
                     "status": "success" if result.success else "partial",
                     "inserted": result.records_inserted,
+                    "dry_run": dry_run,
+                    "counts": result.metadata.get("dry_run_counts"),
                 }
 
             except Exception as e:
                 fail_result = ConnectorResult("open_targets")
                 fail_result.add_error("task_error", str(e))
                 fail_result.finish()
-                await tracker.complete_job(job_id, fail_result)
+                await tracker.complete_job(
+                    job_id, fail_result, status="failed", update_source=not dry_run
+                )
                 raise
 
     try:
@@ -417,7 +580,9 @@ def run_opentargets_ingest(self, job_type: str = "incremental", max_records: int
 
 
 @shared_task(bind=True, name="workers.tasks.ingest.run_ema_ingest", queue="ingest", max_retries=3)
-def run_ema_ingest(self, job_type: str = "incremental", max_records: int | None = None):
+def run_ema_ingest(
+    self, job_type: str = "incremental", max_records: int | None = None, dry_run: bool = False
+):
     """Ingest medicine authorisation records from the EMA official medicines export."""
     from workers.connectors.ema.connector import EMAConnector
     from workers.connectors.ema.normalizer import EMANormalizer
@@ -430,29 +595,44 @@ def run_ema_ingest(self, job_type: str = "incremental", max_records: int | None 
         async with async_session() as db:
             if settings.is_production:
                 await assert_database_role(db, "gennomx_worker")
-            tracker = JobTracker(db)
-            job_id = await tracker.create_job("ema", job_type, celery_task_id=self.request.id)
-            await tracker.start_job(job_id)
+            tracked_job = await _create_tracked_job(db, "ema", job_type, self.request.id, dry_run)
+            if tracked_job is None:
+                return {"status": "skipped", "reason": "source_disabled", "source_slug": "ema"}
+            tracker, job_id = tracked_job
 
             try:
                 result = await connector.run(job_type=job_type, max_records=max_records)
+                if dry_run:
+                    dry_counts = {"parsed": 0, "accepted": 0, "rejected": 0}
+                    await _normalize_dry_run_page(result.raw_payloads, normalizer, dry_counts)
+                    _finalize_dry_run(result, dry_counts)
                 if _has_fatal_connector_error(result):
                     raise RuntimeError(result.errors[0]["message"])
 
-                await _persist_regulatory_approvals(db, result, normalizer, "ema")
+                if not dry_run:
+                    await _persist_regulatory_approvals(db, result, normalizer, "ema")
 
-                await tracker.complete_job(job_id, result)
+                await tracker.complete_job(
+                    job_id,
+                    result,
+                    status="success" if result.success else "partial",
+                    update_source=not dry_run,
+                )
                 return {
                     "job_id": job_id,
                     "status": "success" if result.success else "partial",
                     "inserted": result.records_inserted,
+                    "dry_run": dry_run,
+                    "counts": result.metadata.get("dry_run_counts"),
                 }
 
             except Exception as e:
                 fail_result = ConnectorResult("ema")
                 fail_result.add_error("task_error", str(e))
                 fail_result.finish()
-                await tracker.complete_job(job_id, fail_result)
+                await tracker.complete_job(
+                    job_id, fail_result, status="failed", update_source=not dry_run
+                )
                 raise
 
     try:

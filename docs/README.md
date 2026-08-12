@@ -3,7 +3,7 @@
 ## Fontes normativas (raiz)
 
 - [`../AGENTS.md`](../AGENTS.md) — instruções operacionais para agentes (fonte normativa do projeto).
-- [`../protocolo_vlaeg_otimizado.md`](../protocolo_vlaeg_otimizado.md) — framework operacional VLAEG (fonte normativa de método).
+- [`../../protocolo_vlaeg_2.0.md`](../../protocolo_vlaeg_2.0.md) — framework operacional VLAEG 2.0 (fonte normativa de método).
 - [`../README.md`](../README.md) — visão geral para humanos.
 
 ## Documentos de área (`docs/`)
@@ -26,8 +26,8 @@
 ## Diretórios complementares
 
 - [`../architecture/`](../architecture/) — POPs (ingestão, ferramenta MCP) e ADRs.
-- [`../tools/`](../tools/) — scripts determinísticos (handshake Link, bootstrap/verificação Supabase).
-- [`../project_state/`](../project_state/) — estado de execução vivo (`task_plan.md`, `progress.md`, `findings.md`, `fontes_priorizacao.xlsx`).
-- [`../project_state/archive/`](../project_state/archive/) — registros históricos preservados (`TASKFLOW.md`, `MEMORY_FASE_*.md`, planos legados). Não atualizar.
+- [`../tools/`](../tools/) — scripts determinísticos (handshake Link e utilitários PostgreSQL).
+- [`../project_state/`](../project_state/) — estado VLAEG 2.0 vivo (`CONTEXT`, `DECISIONS`, `TASKS`, `FINDINGS`, `PROGRESS`, `plans/`).
+- [`../project_state/archive/v1/`](../project_state/archive/v1/) — estado e planos VLAEG v1 preservados. Não atualizar.
 - [`_fontes_originais/`](_fontes_originais/) — documentos estratégicos originais preservados.
 - [`_referencias_design/`](_referencias_design/) — ativos de referência visual (logo, design system JSON de inspiração).

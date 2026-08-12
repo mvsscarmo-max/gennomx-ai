@@ -80,9 +80,15 @@ O incremental usa `data_sources.last_successful_run` como cursor e recua
 páginas pendentes, o job recebe `record_limit_reached` e não avança o cursor.
 
 Cada estudo usa savepoint; falhas sistêmicas de fetch/storage acionam retry Celery. O JSON bruto
-canônico é comprimido e salvo no bucket raw do Supabase por fonte/data/NCT/hash. Caminho, hash,
-tamanho, timestamp e versão ficam em `SourceDocument`. Evidências são fragmentos JSON literais da
-resposta oficial. O adapter S3 não integra esta entrega e falha explicitamente se selecionado.
+canônico é comprimido e salvo no storage S3-compatible ativo (MinIO no runtime atual) por
+fonte/data/NCT/hash. Caminho, hash, tamanho, timestamp e versão ficam em `SourceDocument`.
+Evidências são fragmentos JSON literais da resposta oficial.
+
+Antes de qualquer escrita, um `dry_run=true` percorre connector, parser e normalizer, registra um
+`IngestionJob` auditável com contagens em `metadata`, mas não grava raw, `SourceDocument`,
+`EvidenceSnippet`, assertions, entidades canônicas ou cursor. Uma fonte desabilitada só pode ser
+executada nesse modo por rota administrativa; execuções reais e o Beat respeitam
+`data_sources.is_enabled`.
 
 Este documento reúne as fontes prioritárias, regras de ingestão, pipelines, scraping, uploads e critérios de priorização.
 
@@ -128,16 +134,16 @@ Todo conector deve declarar seu contrato `{input, processamento, output}` antes 
     "metodo": "api",
     "endpoint": "https://clinicaltrials.gov/api/v2/studies",
     "campos_obrigatorios": ["protocolSection.identificationModule.nctId"],
-    "campos_opcionais": ["phase", "overallStatus", "interventions", "sponsor", "conditions"],
+    "campos_opcionais": ["phase", "overallStatus", "interventions", "sponsor", "conditions", "protocolSection.outcomesModule", "resultsSection.outcomeMeasuresModule", "resultsSection.adverseEventsModule"],
     "formato": "json"
   },
   "processamento": {
-    "regras": ["paginação", "retry/backoff", "parsing protocolSection", "normalização fase/status", "linking DrugAsset", "evidência"],
+    "regras": ["paginação", "retry/backoff", "parsing protocolSection/resultsSection", "normalização fase/status", "linking DrugAsset", "evidência literal"],
     "validacoes": ["NCT ID presente", "idempotência por NCT ID", "JSON de erro/metadados válido"],
     "transformacoes": ["PHASE_MAP", "STATUS_MAP", "extract_drug_names", "datas"]
   },
   "output": {
-    "destino": "clinical_trials, drug_assets, source_documents, evidence_snippets, ingestion_jobs",
+    "destino": "clinical_trials, drug_assets, endpoints, trial_results, adverse_events, source_documents, evidence_snippets, ingestion_jobs",
     "formato": "entidades PostgreSQL + EvidenceSnippet + SourceDocument",
     "criterio_de_sucesso": "trials upsertados com NCT ID único, SourceDocument e EvidenceSnippet vinculados, IngestionJob registrado com data_source_id"
   }
@@ -300,7 +306,7 @@ Antes de desenvolver/operar a lógica de um conector, sua conectividade deve ser
 
 ## 4. Fontes de dados prioritárias
 
-> **Fonte da verdade:** a lista completa de fontes candidatas, com URL, tipo de acesso, API/export/scraping, complexidade, status de implementação, slugs de conector e — crucialmente — a **ordem de prioridade** (definida manualmente pelo usuário) vive na planilha Excel **`project_state/fontes_priorizacao.xlsx`**. Essa planilha é premissa viva do projeto: o roadmap de novos conectores (`docs/08_ROADMAP.md`, `project_state/task_plan.md`) segue a coluna `Prioridade` dela. As subseções abaixo resumem as categorias por contexto regulatório/científico; não repita prioridade aqui.
+> **Fonte da verdade:** a lista completa de fontes candidatas e sua ordem vive em **`project_state/fontes_priorizacao.xlsx`**. O roadmap de novos conectores (`docs/08_ROADMAP.md`, `project_state/TASKS.md`) segue a coluna `Prioridade` e os bloqueios vigentes.
 
 ### 4.1 Fontes regulatórias
 
@@ -490,11 +496,20 @@ O conector `clinicaltrials_gov` já executa:
 - tarefa Celery `link_trials_to_assets` para backfill de trials já ingeridos sem vínculo com ativos;
 - registro de `IngestionJob` com `data_source_id`, contadores de inserção, atualização, rejeição e erro em JSON válido.
 
+Incremento DRY-7 por fixtures (2026-07-20):
+
+- endpoints planejados de `protocolSection.outcomesModule` são projetados em `endpoints`;
+- medidas postadas de `resultsSection.outcomeMeasuresModule` alimentam `endpoints` e
+  `trial_results` por grupo, preservando valores negativos e inconclusivos no literal/raw;
+- `resultsSection.adverseEventsModule` alimenta contagens sérias e não sérias quando presentes;
+- projeções usam fingerprint, current/superseded e `source_evidence_id`; reexecução idêntica não
+  duplica registros;
+- trial sem resultados continua válido e é retornado pelo MCP com gaps, não como erro.
+
 Limitações atuais:
 
-- o raw payload ainda não é gravado em Supabase Storage/S3;
-- evidência criada é um resumo estruturado do registro público, não extração granular de todos os campos;
-- endpoints, resultados e adverse events ainda não são persistidos como entidades próprias a partir do conector;
+- o incremento é deliberadamente limitado ao schema literal da fixture CT.gov; não infere eficácia;
+- evidência granular cobre os três módulos implementados, não todos os campos clínicos;
 - o linking atual usa correspondência exata case-insensitive por `primary_name`; deduplicação fuzzy, INN, cross-IDs e resolução de conflitos ainda dependem de processamento posterior;
 - confidence scoring avançado ainda depende das tarefas de processamento posteriores.
 
@@ -511,7 +526,7 @@ O conector `pubmed` executa:
 - `SourceDocument` com `source_type=scientific_publication` e URL `https://pubmed.ncbi.nlm.nih.gov/<pmid>/`;
 - `EvidenceSnippet` com entity_type `publication` e fragmento literal (title + abstract + journal + pmid + doi);
 - linking NCT: extração de `<DataBankName>ClinicalTrials.gov</…><AccessionNumber>` do EFetch, resolvido contra `clinical_trials.nct_id`; NCTs não resolvidos registrados em `ingestion_metadata` para backfill;
-- raw payload (XML+gzip) imutável em Supabase Storage;
+- raw payload (XML+gzip) imutável no storage S3-compatible ativo;
 - qualidade mínima: PMID obrigatório, title obrigatório;
 - rate limit via `asyncio.sleep(1/PUBMED_RATE_LIMIT_REQUESTS_PER_SECOND)`, retry com `tenacity`;
 - beat schedule diário (`pubmed-daily-incremental`) com incremental por `EDAT` e lookback de 2 dias.
@@ -554,7 +569,7 @@ em `workers/persistence/regulatory.py` (openFDA/DailyMed/EMA) e `workers/persist
 
 Todos os quatro: quality gate mínimo (`asset_name`/`symbol` + `agency` obrigatórios via
 `workers/base/staging.py`), `PersistenceDecisionEngine` para insert/replace/noop/conflict,
-`SourceDocument` + `EvidenceSnippet` por registro, raw payload imutável em Supabase Storage,
+`SourceDocument` + `EvidenceSnippet` por registro, raw payload imutável no storage S3-compatible,
 registrados em `tools/handshake.py` e no `beat_schedule` do Celery (`openfda-daily-incremental`,
 `dailymed-daily-incremental`, `opentargets-weekly`, `ema-weekly`).
 
@@ -585,7 +600,7 @@ Regras:
 
 ## Uso de DuckDB nos workers
 
-DuckDB deve processar dados brutos localmente nos workers antes da persistência no Supabase/PostgreSQL.
+DuckDB deve processar dados brutos localmente nos workers antes da persistência no PostgreSQL.
 
 Usos prioritários:
 

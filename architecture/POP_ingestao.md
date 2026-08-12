@@ -8,7 +8,7 @@
 
 ## Pré-requisitos (fases V e L)
 
-1. **V — Visão:** registrar em `project_state/task_plan.md` o objetivo da fonte, o que entra/sai e o critério de sucesso.
+1. **V — Visão:** registrar em `project_state/plans/` e `TASKS.md` o objetivo da fonte, o que entra/sai e o critério de sucesso.
 2. **Contrato de dados (3.1):** declarar o bloco `{input, processamento, output}` em `docs/03` §0 **antes** de codar.
 3. **L — Link:** implementar `healthcheck()` no conector e registrá-lo em `tools/handshake.py`; rodar `make handshake` e atualizar a matriz Link (`docs/03` §0B). Não desenvolver a lógica final sobre integração não validada.
 
@@ -59,4 +59,4 @@ Auditoria
 
 ## Encerramento
 
-- Atualizar `docs/03` (estado implementado + limitações), `project_state/progress.md` e registrar decisão em `docs/11_CHANGELOG_DECISOES.md`.
+- Atualizar `docs/03` (estado implementado + limitações), `project_state/PROGRESS.md` e registrar decisão em `project_state/DECISIONS.md`/`docs/11_CHANGELOG_DECISOES.md`.

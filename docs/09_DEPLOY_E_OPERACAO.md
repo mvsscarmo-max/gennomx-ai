@@ -1,5 +1,15 @@
 # 09 — Deploy, Operação, Observabilidade e Manutenção
 
+## Estado operacional vigente — 2026-07-20
+
+- Banco alvo: PostgreSQL/pgvector na VPS, com roles segregadas e 5432 não pública.
+- Auth: JWT local próprio; Platform Auth RS256 é aditivo por `PLATFORM_AUTH_ENABLED`.
+- Storage runtime: MinIO/S3-compatible nos buckets `gennomx-ai-{raw,processed,evidence}`.
+- Storage futuro: Cloudflare R2, sem buckets ou credenciais provisionados.
+- Supabase: somente histórico de migração; não configurar variáveis Supabase no runtime.
+- MCP: `MCP_TOKEN_*` e scopes próprios; sessão admin nunca substitui token MCP.
+- Nenhum deploy, ingestão real ou provisionamento é autorizado por este documento.
+
 ## Automações de governança — 2026-06-21
 
 | Gatilho | Agenda UTC | Comportamento |
@@ -7,7 +17,7 @@
 | `governance-freshness-daily` | 02:30 diária | marca assertions/trials vencidos para revalidação |
 | `governance-retention-weekly` | domingo 04:00 | manifesta, arquiva e expurga somente classes elegíveis |
 
-Simular antes da primeira execução produtiva. Execução real exige Storage Supabase; falha de upload
+Simular antes da primeira execução produtiva. Execução real exige storage MinIO; falha de upload
 marca manifesto `failed` e impede exclusão. Exclusão exige `archive_items`, cutoff e ausência de
 legal hold. Restore: recuperar `storage_uri`, validar SHA-256 e reimportar em staging.
 
@@ -24,9 +34,11 @@ fechados se o role runtime não corresponder ou puder ignorar RLS. Nunca usar `p
 `service_role` como conexão de aplicação. O dashboard SSR encaminha a sessão do usuário e usa
 `cache: no-store`; não recebe segredo administrativo em produção.
 
-## PostgreSQL VPS Banco-Only
+## PostgreSQL VPS e histórico do corte banco-only
 
-A migração aprovada em 2026-07-09 troca somente o PostgreSQL hospedado na Supabase por PostgreSQL/pgvector na VPS Hostinger. Supabase Auth/JWKS e Supabase Storage permanecem temporariamente. Não remover `SUPABASE_URL`, `SUPABASE_JWKS_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` nem `STORAGE_BACKEND=supabase` nesta rodada.
+A etapa de 2026-07-09 migrou o alvo de banco. As dependências temporárias de Auth/Storage Supabase
+foram substituídas por JWT próprio e MinIO. Os comandos de inventário abaixo são preservados apenas
+como histórico e não fazem parte do runbook atual.
 
 Artefatos preparados:
 
@@ -53,10 +65,11 @@ Estado staging em 2026-07-09:
 - Stacks intermediárias `gennomx-ai-postgres`, `gennomx-ai-postgres-secure` e `gennomx-ai-postgres-final` removidas após aprovação explícita.
 - Projeto legado `postgresql-spko`, que publicava Postgres em porta host dinâmica, removido após aprovação explícita.
 - Alembic `head` aplicado em staging: SQL offline compactado/dividido em dois chunks e executado por projeto temporário na rede interna. Validação: `alembic_version=0006`, extensões `pg_trgm=1.6`, `pgcrypto=1.3`, `uuid-ossp=1.1`, `vector=0.8.1`, quatro roles dedicadas com `rolsuper=false`/`rolbypassrls=false`, 27 tabelas com RLS e 60 policies.
-- Migração de dados ainda pendente: MCP Supabase corrigido/autenticado via OAuth no Codex e OpenCode em 2026-07-09, mas exige nova sessão para carregar as ferramentas no agente; URL direta Supabase local falhou DNS e pooler local rejeitou role/tenant configurada. Não executar dump/restore sem inventário MCP Supabase ou `SUPABASE_DIRECT_URL` funcional por canal seguro.
+- O inventário histórico confirmou apenas seeds na origem; não há dump/restore pendente para dados
+  de aplicação. Validação real contra a rede privada da VPS continua ambiental.
 - Observação operacional: a API Hostinger pode retornar variáveis de ambiente do projeto em `getProjectContents`; tratar respostas/logs dessa chamada como sensíveis e avaliar rotação antes de produção.
 
-Inventário da origem Supabase:
+Inventário histórico da origem Supabase (não executar como operação corrente):
 
 ```bash
 SUPABASE_DIRECT_URL="postgresql://..." python tools/postgres_inventory.py --url-env SUPABASE_DIRECT_URL > supabase-inventory.json
@@ -100,9 +113,8 @@ make handshake
 cd frontend && npm run lint && npm run typecheck && npm run build
 ```
 
-Cutover produtivo exige aprovação explícita e deve seguir: pausar Celery beat e ingestões; colocar janela controlada; backup final Supabase; dump final; restore final na VPS; comparação de contagens/checksums; troca de env/secrets para `DATABASE_PROVIDER=vps_postgres`; subir API/worker/beat; validar `/ready`, dashboard e MCP; reativar ingestão com limites conservadores; monitorar por 24-72h.
-
-Rollback: pausar API/worker/beat; reapontar `DATABASE_PROVIDER=supabase_postgres` e as três URLs de banco para Supabase; subir sem processar ingestões atrasadas automaticamente; validar `/ready`, dashboard e MCP; registrar divergências; reconciliar ou descartar deltas escritos no banco VPS.
+O cutover descrito nesta seção é histórico. Qualquer ativação da stack VPS exige nova janela
+operacional, backup/restore do PostgreSQL VPS, gates locais e aprovação humana explícita.
 
 ## Deploy da aplicação na VPS (API + worker + beat + Redis) — 2026-07-09
 
@@ -132,11 +144,11 @@ sem expor `5432`.
 3. `.env` na VPS preenchido com valores reais. Para a **primeira rodada** usar
    `ENVIRONMENT=staging` (não exige `rediss://` nem as validações de produção de
    `config.py`); promover a `production` após validar.
-4. Supabase Storage buckets `gennomx-raw`/`gennomx-processed`/`gennomx-evidence`
-   criados e `SUPABASE_SERVICE_ROLE_KEY` válida (o `store_raw_payload` falha fechado
-   sem bucket; o raw imutável é requisito do pipeline).
-5. Supabase Auth/JWKS ativo (`SUPABASE_JWKS_URL`, `SUPABASE_SERVICE_ROLE_KEY`,
-   `NEXT_PUBLIC_SUPABASE_URL/ANON_KEY`).
+4. MinIO/S3-compatible configurado com os buckets `gennomx-ai-raw`,
+   `gennomx-ai-processed` e `gennomx-ai-evidence`, usando credenciais de menor privilégio.
+   O preflight administrativo precisa escrever, ler e remover um objeto efêmero antes
+   de qualquer smoke-run real.
+5. JWT administrativo configurado (`AUTH_*`); tokens MCP permanecem independentes.
 6. Redis com senha forte (definida em `REDIS_PASSWORD`).
 
 ### Runbook de deploy (na VPS, dentro do repo)
@@ -148,7 +160,7 @@ cp .env.example .env
 #   DATABASE_URL/WORKER_DATABASE_URL/DATABASE_URL_SYNC apontando para
 #   gennomx-ai-postgres-ready-postgres-1:5432 com as roles/senhas reais da VPS,
 #   REDIS_URL/CELERY_BROKER_URL/CELERY_RESULT_BACKEND com a senha Redis real,
-#   SUPABASE_* com valores reais (Auth/Storage permanecem).
+#   AUTH_* e MINIO_* com valores reais.
 
 # 2) Confirmar migrations no alvo
 cd backend && python -m alembic -c migrations/alembic.ini current
@@ -159,23 +171,39 @@ cd backend && python -m alembic -c migrations/alembic.ini current
 make handshake
 # esperado: 6 conectores OK. Se algum falhar, isolar antes de subir o beat.
 
-# 4) Subir Redis + worker + beat (build primeira vez)
-docker compose -f infra/docker-compose.vps-app.yml up -d --build redis worker beat
+# 4) Subir somente Redis + worker + API. Nao subir Beat nesta etapa.
+docker compose -f infra/docker-compose.vps-app.yml --profile api up -d --build redis worker api
 
-# 5) Smoke-run incremental controlado (sem beat, limitado) — um conector por vez
-docker compose -f infra/docker-compose.vps-app.yml exec beat \
-  celery -A workers.celery_app call workers.tasks.ingest.run_clinicaltrials_ingest \
-  --args='["incremental"]' --kwargs='{"max_records": 200}'
-# Validar: IngestionJob status=success|partial, records_inserted>0,
-#   source_documents/evidence_snippets criados, raw em Supabase Storage,
-#   data_sources.last_successful_run preenchido.
+# 5) Como admin, executar preflight no provider de storage ativo.
+curl -X POST "$API_BASE/api/v1/sources/storage-preflight" \
+  -H "Authorization: Bearer $ADMIN_BEARER_TOKEN"
 
-# 6) Apos validar os 6 conectores via smoke-run, confirmar o beat roda:
+# 6) Para cada fonte aprovada, executar primeiro dry-run limitado. A fonte pode continuar
+#    desativada neste ponto; dry-run nao grava entidades, raw, evidencias ou cursor.
+curl -X POST "$API_BASE/api/v1/sources/clinicaltrials_gov/run" \
+  -H "Authorization: Bearer $ADMIN_BEARER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"job_type":"incremental","max_records":50,"dry_run":true}'
+
+# 7) Apos revisar o dry-run, ativar uma fonte e executar smoke-run real, uma por vez.
+curl -X PATCH "$API_BASE/api/v1/sources/clinicaltrials_gov/activation" \
+  -H "Authorization: Bearer $ADMIN_BEARER_TOKEN" \
+  -H "Content-Type: application/json" -d '{"is_enabled":true}'
+curl -X POST "$API_BASE/api/v1/sources/clinicaltrials_gov/run" \
+  -H "Authorization: Bearer $ADMIN_BEARER_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"job_type":"incremental","max_records":50,"dry_run":false}'
+# Validar: IngestionJob status=success|partial, raw/evidencias previstos e cursor
+# atualizado apenas em success. `partial` por limite nao e falha nem avanca cursor.
+curl "$API_BASE/api/v1/warehouse/coverage" \
+  -H "Authorization: Bearer $ADMIN_BEARER_TOKEN"
+# Revisar inventory, traceability e limitations antes de ativar a proxima fonte.
+
+# 8) Somente apos validar os 6 conectores via smoke-run, subir e acompanhar o Beat.
+docker compose -f infra/docker-compose.vps-app.yml up -d beat
 docker compose -f infra/docker-compose.vps-app.yml ps
 docker compose -f infra/docker-compose.vps-app.yml logs -f worker beat
 
-# 7) (Opcional) Subir a API sob profile api para validar /ready, MCP e dashboard:
-docker compose -f infra/docker-compose.vps-app.yml --profile api up -d --build api
 # Configurar Traefik labels/roteamento para admin.gennomx.com/api/ai e mcp.gennomx.com
 # (deploy separado do frontend Next.js em admin.gennomx.com/ai).
 ```
@@ -192,7 +220,7 @@ docker compose -f infra/docker-compose.vps-app.yml --profile api up -d --build a
 ```bash
 docker compose -f infra/docker-compose.vps-app.yml down
 # Postgres permanece; dados ingeridos em staging podem ser truncados se necessario
-# (ambiente nao-produtivo). Reapontar .env para supabase_postgres se voltar a origem.
+# (ambiente nao-produtivo). Restaurar o backup PostgreSQL aprovado se necessário.
 ```
 
 ### Nota de segurança operacional
@@ -246,8 +274,8 @@ local do compose produtivo.
 ### Pré-deploy MVP
 
 1. Confirmar `.env` produtivo fora do Git, sem placeholders e com `ENVIRONMENT=production`.
-2. Confirmar `API_ALLOWED_HOSTS`, `CORS_ORIGINS`, `SUPABASE_JWKS_URL`, tokens MCP e URLs Redis TLS.
-3. Aplicar migrações no banco principal atual com `gennomx_migrator`: Supabase antes do cutover ou PostgreSQL VPS depois do cutover; `cd backend && python -m alembic -c migrations/alembic.ini upgrade head`.
+2. Confirmar `API_ALLOWED_HOSTS`, `CORS_ORIGINS`, Platform Auth quando habilitado, tokens MCP e URLs Redis TLS.
+3. Aplicar migrações no PostgreSQL VPS com `gennomx_migrator`: `cd backend && python -m alembic -c migrations/alembic.ini upgrade head`.
 4. Verificar que `alembic_version` está em `0006`.
 5. Executar `make release-check` em ambiente com dependências completas.
 6. Executar `make handshake` em ambiente com rede liberada.
@@ -255,7 +283,7 @@ local do compose produtivo.
 8. Validar `/health`, `/ready`, login do dashboard, worker status e um job de ingestão controlado.
 9. Configurar frontend com `NEXT_PUBLIC_BASE_PATH=/ai` e `NEXT_PUBLIC_API_URL` apontando para
    `https://admin.gennomx.com/api/ai`.
-10. Registrar resultado em `project_state/progress.md` e `docs/11_CHANGELOG_DECISOES.md`.
+10. Registrar resultado em `project_state/PROGRESS.md` e decisões em `project_state/DECISIONS.md`.
 
 ## Política de retenção, particionamento e arquivamento — 2026-06-20
 
@@ -374,7 +402,7 @@ Diante de erro, falha de integração, bug ou comportamento inesperado, aplicar 
 2. **Isolar:** classificar a origem — dados, regra de negócio, integração/fonte, infraestrutura ou interface.
 3. **Corrigir:** ajustar código, configuração ou regra, em mudança pequena e reversível (`AGENTS.md` §14).
 4. **Testar:** executar teste unitário/integração/contrato pertinente, ou simulação via `tools/handshake.py`.
-5. **Documentar:** registrar em `docs/11_CHANGELOG_DECISOES.md` e/ou `project_state/progress.md`.
+5. **Documentar:** registrar em `project_state/PROGRESS.md` e, quando aplicável, `DECISIONS.md`.
 6. **Prevenir recorrência:** criar validação, teste de regressão ou alerta.
 
 > **Regra:** o mesmo erro não deve ocorrer duas vezes sem gerar melhoria documental, teste ou validação preventiva.
@@ -590,16 +618,14 @@ Antes de deploy, executar `make test`, `make test-e2e`, `make security-scan` e
 - backend FastAPI;
 - worker Celery;
 - Redis broker;
-- PostgreSQL/pgvector na VPS como banco principal após cutover; Supabase Auth/JWKS e Storage temporários;
-- Supabase Storage ou storage S3-compatible;
+- PostgreSQL/pgvector na VPS como banco principal;
+- MinIO/S3-compatible como storage runtime;
 - OPENCODE/LLM configurado por variáveis protegidas (`OPENCODE_API_KEY`, `OPENCODE_BASE_URL`);
 
 ### Variáveis e segredos
 
 Separar credenciais para:
 
-- Supabase anon key;
-- Supabase service role key, nunca exposta ao frontend;
 - database URL;
 - Redis URL;
 - provedores LLM;
@@ -619,6 +645,12 @@ Monitorar:
 - falhas de parsing;
 - custos de IA por job;
 - latência MCP;
-- uso do Supabase;
+- volume e saúde do PostgreSQL/MinIO;
 - volume de storage;
 - falhas de backup e restore.
+
+## Platform Auth e storage segregado
+
+`PLATFORM_AUTH_ENABLED`, issuer, audience, tenant, cookie e chave pública RS256 estão documentados
+em `.env.example`. Manter `MCP_TOKEN_*` separado. MinIO usa buckets próprios da AI e credenciais de
+menor privilégio; R2 permanece futuro e não provisionado.

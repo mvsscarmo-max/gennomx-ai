@@ -2,6 +2,8 @@
 
 ## Implementação operacional da matriz — migração 0004
 
+> Estado vigente em 2026-07-20: paths de raw, processed e evidence apontam para MinIO/S3-compatible. Cloudflare R2 é destino futuro, sem provisionamento nesta fase.
+
 - `field_assertions` recebeu classe, tipo de fonte, prioridade, maturidade, novidade, impacto
   clínico, validação, expiração e arquivamento, com checks e índice de expiração;
 - `data_policy.py` torna granularidade/freshness obrigatórias e falha fechado para campo sem

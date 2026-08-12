@@ -1,5 +1,9 @@
 # 12 — Stack Tecnológica Refinada do MVP
 
+> **Substituição operacional em 2026-07-20:** as referências a Supabase neste documento registram
+> a stack originalmente aprovada. O runtime vigente usa PostgreSQL/pgvector na VPS, JWT local +
+> Platform Auth por flag e MinIO/S3-compatible. Cloudflare R2 é alvo futuro.
+
 **Status:** Aprovada  
 **Data:** 09/06/2026  
 **Natureza:** decisão arquitetural complementar aos documentos de contexto, arquitetura, segurança, testes e operação.
@@ -8,7 +12,7 @@
 
 ## 1. Decisão aprovada
 
-A stack oficial do MVP da **GennomX AI** passa a ser uma evolução da stack original, mantendo o núcleo **Supabase/PostgreSQL + FastAPI + DuckDB + pgvector**, mas acrescentando separação clara entre frontend, API/MCP, workers assíncronos, processamento batch e gateway de LLMs.
+A stack vigente da **GennomX AI** mantém o núcleo **PostgreSQL/pgvector + FastAPI + DuckDB**, com separação clara entre frontend, API/MCP, workers assíncronos e processamento batch.
 
 A decisão aprovada é:
 
@@ -27,7 +31,7 @@ Processamento batch:
 DuckDB executado nos workers, para processar arquivos grandes, exports, JSON/CSV massivos, validações batch, deduplicação e normalização antes da persistência no banco principal.
 
 Banco, Auth, Storage e busca:
-Supabase/PostgreSQL como núcleo de dados, Supabase Auth para autenticação, Supabase Storage ou S3-compatible storage para arquivos e snapshots, PostgreSQL full-text search para busca textual inicial e pgvector para busca semântica no MVP avançado/Fase 2.
+PostgreSQL/pgvector na VPS é o núcleo de dados; JWT local e Platform Auth por flag cuidam da autenticação; MinIO/S3-compatible armazena arquivos e snapshots. PostgreSQL full-text search e pgvector permanecem as opções iniciais de busca.
 
 LLM Gateway:
 Adaptador interno OPENCODE (MVP: DeepSeek V4 Pro), configurável por provedor via ``LLM_PROVIDER``, com validação por schema Pydantic, auditoria ``llm_call_logs`` e bloqueio de escrita direta por LLM.
@@ -57,11 +61,11 @@ Conectores + parsers + DuckDB + OPENCODE/LLM + validação por schema
         │
         ├── salva raw files / PDFs / snapshots
         │       ▼
-        │   [Supabase Storage / S3-compatible storage]
+        │   [MinIO / S3-compatible storage]
         │
         └── grava dados limpos, evidências, logs e índices
                 ▼
-        [Supabase PostgreSQL + full-text search + pgvector]
+        [PostgreSQL VPS + full-text search + pgvector]
                 ▲
                 │
 [Next.js Dashboard] ←→ [FastAPI API] ←→ [MCP Server]
@@ -132,12 +136,12 @@ Responsável por:
 - transformar JSON/CSV/Parquet quando aplicável;
 - fazer validações batch;
 - deduplicar e normalizar dados antes da persistência;
-- reduzir carga no Supabase/PostgreSQL;
+- reduzir carga no PostgreSQL;
 - apoiar exploração analítica offline.
 
 DuckDB não substitui o banco principal. Ele é motor de processamento local/batch.
 
-## 3.5 Supabase/PostgreSQL
+## 3.5 PostgreSQL/pgvector na VPS
 
 Responsável por:
 
@@ -153,7 +157,7 @@ Responsável por:
 - busca textual inicial;
 - vetores com pgvector quando habilitado.
 
-## 3.6 Supabase Storage ou S3-compatible storage
+## 3.6 MinIO/S3-compatible storage
 
 Responsável por:
 
@@ -212,7 +216,7 @@ Princípios:
 
 - começar simples;
 - evitar OpenSearch, Pinecone, Kubernetes, Airflow ou data warehouse no MVP;
-- centralizar banco, auth, storage, full-text search e vetores no Supabase enquanto for suficiente;
+- manter banco, auth e storage separados por responsabilidade e menor privilégio;
 - isolar processamento pesado em workers;
 - controlar custo de IA por job, fonte, modelo e tarefa;
 - prever migração futura sem reescrita conceitual.
@@ -223,7 +227,7 @@ Princípios:
 
 | Risco | Mitigação |
 |---|---|
-| Supabase virar gargalo de processamento | Usar DuckDB nos workers e persistir apenas dados limpos |
+| PostgreSQL virar gargalo de processamento | Usar DuckDB nos workers e persistir apenas dados limpos |
 | API/MCP ficarem lentos durante ingestão | Celery + Redis e workers separados |
 | pgvector crescer além do ideal | Prever Qdrant/Weaviate/Pinecone em fase futura |
 | Filas virarem caixa-preta | Registrar `IngestionJob`, métricas, status, erros e custos |
@@ -241,7 +245,7 @@ Ao criar ou alterar código, agentes devem respeitar:
 - rotas FastAPI não devem executar processamento longo;
 - tarefas longas devem ser jobs Celery;
 - workers devem registrar início, fim, status, erro, volume e custo;
-- DuckDB deve ser usado para batch pesado antes de persistir no Supabase;
+- DuckDB deve ser usado para batch pesado antes de persistir no PostgreSQL;
 - Next.js deve consumir API segura, não contornar regras do backend;
 - MCP deve ser read-only no MVP;
 - OPENCODE/LLM deve ser usado por serviço próprio (`app/services/llm/`), com logs, limites e validação;

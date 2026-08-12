@@ -156,3 +156,8 @@ test-results/
 # Estado local de ferramentas de IA (não faz parte do código do projeto)
 .claude/
 .impeccable/
+
+# rascunhos locais fora do contrato
+backend/*.txt
+!backend/requirements*.txt
+

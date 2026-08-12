@@ -2,10 +2,15 @@
 
 ## Cobertura de governança operacional — 2026-06-21
 
+> Estado 2026-07-20: testes de Platform Auth validam RS256 e rejeitam audience, tenant, app,
+> kind e scope incorretos. Testes também provam que sessão administrativa não substitui token MCP.
+> DRY-7 usa fixtures com resultados, valores negativos/inconclusivos, adverse events e trial sem
+> resultados; a persistência é reexecutada para provar idempotência.
+
 Há testes para granularidade/freshness, falha fechada de política, staging de duplicatas, merge
 parcial não destrutivo, assertion governada, correção com supersession, sanitização/allowlist de
 scraping, contrato da migração `0004` e ordem arquivo→legal hold→exclusão. O resultado consolidado
-fica em `project_state/progress.md`.
+fica em `project_state/PROGRESS.md`.
 
 ## Regressões adicionadas após revisão externa — 2026-06-21
 
@@ -381,7 +386,7 @@ Recomendação inicial:
 - Bandit/Semgrep para SAST;
 - Trivy ou equivalente para containers/dependências;
 - GitHub Actions ou GitLab CI para CI/CD;
-- Supabase local/staging para testes de banco;
+- PostgreSQL local/staging para testes de banco;
 - fixtures versionadas para conectores.
 
 A escolha final pode variar conforme stack definitiva.

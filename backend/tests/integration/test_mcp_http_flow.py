@@ -83,3 +83,26 @@ async def test_mcp_http_call_without_token_rejects_without_db_write(mock_db, mon
     persist_log.assert_not_awaited()
     mock_db.execute.assert_not_awaited()
     mock_db.commit.assert_not_awaited()
+
+
+@pytest.mark.integration
+async def test_admin_bearer_does_not_replace_mcp_token(mock_db, monkeypatch):
+    from app.mcp import server
+
+    async def override_db():
+        yield mock_db
+
+    monkeypatch.setattr(server, "_check_pre_auth_rate_limit", AsyncMock())
+    app.dependency_overrides[get_db] = override_db
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+            response = await client.post(
+                "/api/mcp/call",
+                headers={"Authorization": "Bearer administrative-session-token"},
+                json={"tool": "search_drugs", "arguments": {"query": "example"}},
+            )
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+
+    assert response.status_code == 401
+    mock_db.execute.assert_not_awaited()

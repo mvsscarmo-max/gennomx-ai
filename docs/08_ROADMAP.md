@@ -1,5 +1,10 @@
 # 08 — Roadmap, Backlog e Critérios de Sucesso
 
+> Estado vigente em 2026-07-20: PostgreSQL/pgvector na VPS, JWT local + Platform Auth por flag e
+> MinIO/S3-compatible substituem o runtime Supabase. As seções antigas abaixo preservam a evolução
+> histórica. DRY-7 avançou somente por fixtures; ANVISA, indicação, empresas e PMC seguem bloqueados
+> até validação real do backbone.
+
 Este documento reúne as fases de implementação, backlog técnico inicial, decisões em aberto, suposições e critérios de sucesso do MVP.
 
 ---
@@ -61,7 +66,7 @@ Fontes:
 
 Entregáveis:
 
-- banco Supabase/PostgreSQL;
+- banco PostgreSQL/pgvector;
 - conectores iniciais;
 - raw storage;
 - parsers;
@@ -316,7 +321,7 @@ Critérios de sucesso:
 
 ## 19.6 Infraestrutura
 
-- definir Supabase cloud vs self-host;
+- manter PostgreSQL VPS, auth e storage segregados operacionalmente;
 - configurar ambientes;
 - configurar CI/CD;
 - configurar secret management;
@@ -368,7 +373,7 @@ Critérios de sucesso:
 
 # 20. Decisões técnicas em aberto
 
-## 20.1 Supabase Cloud vs self-host em VPS
+## 20.1 Banco e serviços antes agrupados na Supabase — decisão encerrada
 
 ### Opção A — Supabase Cloud
 
@@ -388,9 +393,8 @@ Contras:
 - dependência de fornecedor;
 - limitações conforme plano.
 
-Recomendação inicial:
-
-- **Supabase Cloud para MVP**, pela velocidade e menor carga operacional.
+Recomendação inicial histórica: Supabase Cloud. Decisão vigente: PostgreSQL/pgvector na VPS,
+JWT próprio/federado por flag e storage MinIO/S3-compatible.
 
 ### Opção B — Supabase self-host/VPS
 
@@ -517,7 +521,7 @@ Recomendação:
 13. Dashboard deve seguir Design System GennomX.
 14. Não haverá multiusuário enterprise no MVP, mas o modelo deve estar preparado.
 15. Segurança e testes automáticos devem ser considerados requisitos de primeira classe.
-16. Supabase é preferência inicial, sujeita a validação técnica.
+16. Supabase foi preferência inicial e hoje é apenas histórico de migração.
 17. Atualização dos dados deve ser diária quando a fonte permitir.
 18. Scraping deve ser agressivo quando necessário, mas com salvaguardas legais e técnicas.
 
@@ -622,7 +626,7 @@ Recomendação:
 
 ## 23.1 Construir primeiro
 
-1. Banco Supabase/PostgreSQL com entidades centrais.
+1. Banco PostgreSQL/pgvector com entidades centrais.
 2. Raw storage com versionamento e hash.
 3. Conectores para ClinicalTrials.gov, PubMed/PMC, openFDA, DailyMed, EMA, Open Targets e ANVISA inicial — ordem real seguindo `Prioridade` em `project_state/fontes_priorizacao.xlsx`.
 4. Pipeline de parsing, normalização, deduplicação e evidências.

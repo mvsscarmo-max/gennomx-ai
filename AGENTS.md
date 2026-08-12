@@ -35,7 +35,7 @@ A GennomX AI deve incluir:
 - estruturação de entidades biomédicas e competitivas;
 - rastreabilidade entre dado estruturado, documento-fonte e trecho de evidência;
 - normalização e deduplicação de entidades;
-- banco PostgreSQL/Supabase no MVP;
+- banco PostgreSQL/pgvector na VPS;
 - servidor MCP com ferramentas semânticas;
 - dashboard para exploração, edição corretiva, monitoramento e auditoria;
 - API interna segura;
@@ -107,16 +107,16 @@ Modelos host devem acessar somente ferramentas MCP seguras, limitadas, auditáve
 
 ### MVP aprovado
 
-A stack oficial do MVP é uma evolução da proposta original, mantendo o núcleo **Supabase/PostgreSQL + FastAPI + DuckDB + pgvector**, com separação clara entre frontend, API/MCP, workers assíncronos, processamento batch e gateway de LLMs.
+A stack oficial do MVP usa **PostgreSQL/pgvector na VPS + FastAPI + DuckDB**, com separação clara entre frontend, API/MCP, workers assíncronos e processamento batch. Supabase é referência histórica, não dependência de runtime.
 
 - Frontend/dashboard: **Next.js**, preferencialmente hospedado em Vercel, Netlify, Hostinger ou similares.
 - Backend/API/MCP: **FastAPI**, concentrando regras de negócio, API interna, endpoints administrativos e servidor MCP.
 - Jobs assíncronos: **Celery + Redis** no MVP.
 - Broker futuro: **RabbitMQ, SQS ou equivalente** apenas se houver necessidade comprovada de maior durabilidade, roteamento avançado ou alto volume.
 - Processamento local/batch: **DuckDB nos workers**, para exports grandes, validações batch, normalização, deduplicação e preparação antes da persistência.
-- Banco principal: **Supabase/PostgreSQL**.
-- Auth: **Supabase Auth** no MVP, com evolução futura para SSO/OIDC/SAML se necessário.
-- Storage: **Supabase Storage ou S3-compatible storage**.
+- Banco principal: **PostgreSQL/pgvector na VPS**.
+- Auth: **JWT local próprio**, acrescido de **Platform Auth RS256 por feature flag**.
+- Storage runtime: **MinIO por API S3-compatible**; Cloudflare R2 é alvo futuro, não provisionado.
 - Busca textual inicial: **PostgreSQL full-text search**.
 - Vetores: **pgvector** no MVP avançado ou fase 2.
 - Gateway de IA: **LiteLLM**, com modelos configuráveis por criticidade, custo, capacidade técnica e validação por schema.
@@ -263,7 +263,7 @@ Diretrizes para Ingestão e Web Scraping Controlado:
 - Prevenção Estrita de SSRF: Validar e filtrar rigorosamente os destinos de busca em nível de rede para proibir conexões do scraper com IPs da infraestrutura interna do projeto;
 - Extração Segura e Sanitização Flash: Processar e limpar o HTML estruturado na memória local (via DuckDB/trabalhadores locais). Bloquear sumariamente qualquer execução de scripts remotos e injetar travas contra XSS e payloads maliciosos antes da persistência;
 - Rastreamento Total de Origem: Registrar compulsoriamente a URL exata de captura, timestamp milimétrico, hash do payload bruto e o método/versão do scraper utilizado;
-- Armazenamento de Cópia Integral (Raw Payload): Persistir o HTML/JSON bruto coletado em uma camada de Object Storage de baixo custo (Supabase Storage) para fins de auditoria, reprocessamento e garantia legal de evidência científica;
+- Armazenamento de Cópia Integral (Raw Payload): persistir HTML/JSON bruto no object storage S3-compatible ativo, com hash e imutabilidade, para auditoria e reprocessamento;
 - Interruptor Geral (Kill Switch): Manter um painel de controle centralizado para pausar ou desativar rotinas de raspagem de domínios específicos instantaneamente caso haja alertas operacionais.
 
 ---
@@ -373,26 +373,28 @@ Ao trabalhar no projeto:
 
 ## 14A. Protocolo de trabalho VLAEG
 
-O projeto adota o **Protocolo VLAEG Otimizado** (`protocolo_vlaeg_otimizado.md`) como framework operacional padrão, operacionalizado em `docs/13_PROTOCOLO_VLAEG.md`.
+O projeto adota o **Protocolo VLAEG 2.0** como framework operacional, operacionalizado em `docs/13_PROTOCOLO_VLAEG.md`.
+
+Antes de qualquer alteração, ler nesta ordem: `AGENTS.md`, `project_state/CONTEXT.md`, `project_state/TASKS.md`, o plano ativo citado no contexto, `project_state/DECISIONS.md` e `project_state/FINDINGS.md`.
 
 Antes de iniciar qualquer novo conector, ferramenta MCP, automação ou módulo, aplicar as fases:
 
-- **V — Visão:** registrar problema, fonte da verdade, entrada/saída e critério de sucesso em `project_state/task_plan.md` e/ou no doc de área.
+- **V — Visão:** registrar problema, fonte da verdade, entrada/saída e critério de sucesso no plano em `project_state/plans/` e em `TASKS.md`.
 - **L — Link:** validar conectividade com `tools/handshake.py` (`make handshake`) **antes** de construir a lógica. Não desenvolver lógica final sobre integração não testada. Atualizar a matriz Link em `docs/03`.
 - **A — Arquitetura:** seguir os POPs em `architecture/` e atualizar `docs/01`/`02`/`03`/`04`.
 - **E — Estilo:** quando houver interface, seguir `docs/07_DASHBOARD_UX.md`.
 - **G — Gatilho:** declarar a automação (template em `docs/09`) e registrar no `beat_schedule` do Celery quando agendada.
 
-O estado de execução vivo está em `project_state/` (`task_plan.md`, `progress.md`, `findings.md`), que sucede `TASKFLOW.md` e `MEMORY_FASE_*` (preservados como histórico em `project_state/archive/`). Diante de erro, aplicar o runbook de autocorreção estruturada de `docs/09` (analisar→isolar→corrigir→testar→documentar→prevenir).
+O estado vivo está em `project_state/{CONTEXT,DECISIONS,TASKS,FINDINGS,PROGRESS}.md` e `project_state/plans/`. O estado v1 foi preservado em `project_state/archive/v1/` e não deve ser editado. Diante de erro, aplicar o runbook de `docs/09`.
 
 ---
 
 ## 15. Documentação detalhada
 
 - `README.md`: visão geral para humanos e instruções iniciais.
-- `protocolo_vlaeg_otimizado.md`: framework operacional VLAEG (fonte normativa de método).
+- `../protocolo_vlaeg_2.0.md`: framework operacional VLAEG 2.0 (fonte normativa de método).
 - `docs/13_PROTOCOLO_VLAEG.md`: adoção do VLAEG e mapeamento de fases/documentos.
-- `project_state/`: estado de execução vivo (task_plan, progress, findings).
+- `project_state/`: estado VLAEG 2.0 vivo (`CONTEXT`, `DECISIONS`, `TASKS`, `FINDINGS`, `PROGRESS`, `plans/`).
 - `docs/00_CONTEXTO_ESTRATEGICO.md`: contexto, premissas e visão de produto.
 - `docs/01_ARQUITETURA.md`: arquitetura, módulos e stack.
 - `docs/02_MODELO_DE_DADOS.md`: entidades, campos, relacionamentos e rastreabilidade.

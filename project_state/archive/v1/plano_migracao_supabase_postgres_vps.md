@@ -1,4 +1,4 @@
-# Plano de migracao - Supabase PostgreSQL para PostgreSQL na VPS
+# Arquivo VLAEG v1 - migracao Supabase PostgreSQL para PostgreSQL VPS
 
 **Data:** 2026-07-09  
 **Solicitante:** Marcus  

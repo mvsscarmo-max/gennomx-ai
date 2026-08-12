@@ -23,6 +23,7 @@ class JobTracker:
         data_source_slug: str,
         job_type: str = "incremental",
         celery_task_id: str | None = None,
+        metadata: dict | None = None,
     ) -> str:
         """Insert a pending IngestionJob and return its ID."""
         job_id = str(uuid.uuid4())
@@ -37,11 +38,11 @@ class JobTracker:
         await self.db.execute(
             text("""
                 INSERT INTO ingestion_jobs
-                  (id, data_source_id, data_source_slug, job_type, celery_task_id,
-                   status, created_at, updated_at)
+                   (id, data_source_id, data_source_slug, job_type, celery_task_id,
+                    status, metadata, created_at, updated_at)
                 VALUES
-                  (:id, :data_source_id, :slug, :job_type, :celery_id,
-                   'pending', now(), now())
+                   (:id, :data_source_id, :slug, :job_type, :celery_id,
+                    'pending', CAST(:metadata AS jsonb), now(), now())
             """),
             {
                 "id": job_id,
@@ -49,6 +50,7 @@ class JobTracker:
                 "slug": data_source_slug,
                 "job_type": job_type,
                 "celery_id": celery_task_id,
+                "metadata": json.dumps(metadata) if metadata else None,
             },
         )
         await self.db.commit()
@@ -65,9 +67,16 @@ class JobTracker:
         )
         await self.db.commit()
 
-    async def complete_job(self, job_id: str, result: ConnectorResult) -> None:
+    async def complete_job(
+        self,
+        job_id: str,
+        result: ConnectorResult,
+        *,
+        status: str | None = None,
+        update_source: bool = True,
+    ) -> None:
         d = result.to_job_dict()
-        status = "success" if result.success else "failed"
+        status = status or ("success" if result.success else "partial")
         await self.db.execute(
             text("""
                 UPDATE ingestion_jobs SET
@@ -101,17 +110,38 @@ class JobTracker:
                 "metadata": json.dumps(d["metadata"]) if d["metadata"] else None,
             },
         )
-        timestamp_column = "last_successful_run" if status == "success" else "last_failed_run"
-        connector_status = "active" if status == "success" else "error"
-        await self.db.execute(
-            text(f"""
-                UPDATE data_sources
-                SET {timestamp_column} = now(), connector_status = :connector_status,
-                    updated_at = now()
-                WHERE slug = :slug
-            """),
-            {"slug": result.source_slug, "connector_status": connector_status},
-        )
+        if update_source:
+            if status == "success":
+                await self.db.execute(
+                    text("""
+                        UPDATE data_sources
+                        SET last_successful_run = now(), connector_status = 'active',
+                            updated_at = now()
+                        WHERE slug = :slug
+                    """),
+                    {"slug": result.source_slug},
+                )
+            elif status == "failed":
+                await self.db.execute(
+                    text("""
+                        UPDATE data_sources
+                        SET last_failed_run = now(), connector_status = 'error',
+                            updated_at = now()
+                        WHERE slug = :slug
+                    """),
+                    {"slug": result.source_slug},
+                )
+            else:
+                # A bounded or partially parsed run is operationally useful but must not
+                # advance the incremental cursor or be presented as a source failure.
+                await self.db.execute(
+                    text("""
+                        UPDATE data_sources
+                        SET connector_status = 'active', updated_at = now()
+                        WHERE slug = :slug
+                    """),
+                    {"slug": result.source_slug},
+                )
         await self.db.commit()
         logger.info(
             "job_completed",

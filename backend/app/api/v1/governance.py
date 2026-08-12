@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import CurrentUser, require_admin
+from app.auth.dependencies import CurrentUser, require_security
 from app.database import get_db
 
 router = APIRouter()
@@ -61,7 +61,7 @@ class ScraperDomainPolicy(BaseModel):
 @router.get("/status")
 async def governance_status(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_admin)],
+    _user: Annotated[CurrentUser, Depends(require_security)],
 ) -> dict:
     domains = (
         (
@@ -128,7 +128,7 @@ async def governance_status(
 async def create_legal_hold(
     payload: LegalHoldCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    user: Annotated[CurrentUser, Depends(require_admin)],
+    user: Annotated[CurrentUser, Depends(require_security)],
 ) -> dict:
     row = (
         await db.execute(
@@ -152,7 +152,7 @@ async def create_legal_hold(
 async def release_legal_hold(
     hold_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_admin)],
+    _user: Annotated[CurrentUser, Depends(require_security)],
 ) -> dict:
     row = (
         await db.execute(
@@ -171,7 +171,7 @@ async def release_legal_hold(
 @router.post("/retention/run", status_code=202)
 async def trigger_retention(
     payload: RetentionRun,
-    _user: Annotated[CurrentUser, Depends(require_admin)],
+    _user: Annotated[CurrentUser, Depends(require_security)],
 ) -> dict:
     from workers.tasks.retention import run_retention_cycle
 
@@ -187,7 +187,7 @@ async def upsert_scraper_domain(
     domain: str,
     payload: ScraperDomainPolicy,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_admin)],
+    _user: Annotated[CurrentUser, Depends(require_security)],
 ) -> dict:
     normalized_domain = domain.casefold().strip().rstrip(".")
     if not normalized_domain or "/" in normalized_domain or ":" in normalized_domain:
@@ -233,7 +233,7 @@ async def upsert_scraper_domain(
 async def pause_scraper_domain(
     domain: str,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_admin)],
+    _user: Annotated[CurrentUser, Depends(require_security)],
 ) -> dict:
     normalized_domain = domain.casefold().strip().rstrip(".")
     await db.execute(

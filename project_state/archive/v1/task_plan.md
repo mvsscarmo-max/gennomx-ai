@@ -1,5 +1,43 @@
-# project_state / task_plan.md — GennomX AI
 
+# Arquivo VLAEG v1 - task_plan
+
+## Plataforma GennomX - admin auth e storage segregado (2026-07-10)
+
+Plano local: `project_state/plano_platform_admin_auth_storage.md`. Plano raiz: `../project_state/plans/PLAN-008-plataforma-admin-auth-storage.md`.
+
+| Etapa | Escopo | Estado |
+|---|---|---|
+| AI-P0 | Reconciliar com trilha JWT proprio + Cloudflare R2 ja em curso | Concluida 2026-07-10; runtime MinIO transitorio inventariado |
+| AI-P1 | Validar token da plataforma para dashboard `/ai` com scopes `ai:*` | Preparado 2026-07-10; ainda nao integrado ao dashboard |
+| AI-P2 | Manter MCP externo separado da sessao admin | A iniciar |
+| AI-P3 | Confirmar buckets/credenciais Cloudflare R2 proprios da AI e preflight de storage | A iniciar |
+| AI-P4 | Integrar scopes a ingestao dry-run/run, curadoria e seguranca | A iniciar |
+| AI-P5 | Testes auth/MCP/storage/frontend/backend | A iniciar |# project_state / task_plan.md — GennomX AI
+
+## Correcao dos issues de ingestao com dry-run - plano aprovado 2026-07-10
+
+Marcus aprovou corrigir os issues de ativacao da ingestao com **dry-run real** antes de qualquer rodada recorrente ampla. A substituicao de Supabase Auth/JWKS por JWT proprio e Supabase Storage por MinIO/S3-compatible ja esta sendo conduzida por outro agente; este plano deve preservar essa trilha e integrar-se apenas por contrato de storage/auth.
+
+Plano canonico: `project_state/plano_correcao_issues_ingestao_dry_run.md`.
+
+### Etapas planejadas
+
+| Etapa | Escopo | Estado |
+|---|---|---|
+| DRY-0 | Revalidar fronteiras com a trilha JWT proprio + MinIO antes de tocar em auth/storage | Concluida 2026-07-10: runtime atual e MinIO/S3-compatible; R2 futuro por contrato |
+| DRY-1 | Ativacao auditavel dos 6 `data_sources` implementados; manter `anvisa`/`pubmed_pmc` inativos | Implementada em codigo 2026-07-10; fontes permanecem desativadas ate dry-run revisado |
+| DRY-2 | Implementar `dry_run` real nas 6 tasks de ingestao, sem persistir entidades/raw/evidencias nem avancar cursor | Implementada em codigo 2026-07-10; pendente execucao real na VPS |
+| DRY-3 | Criar disparo admin controlado por fonte com `dry_run`, `max_records` e allowlist de slugs | Implementada em codigo 2026-07-10; pendente execucao real na VPS |
+| DRY-4 | Adicionar preflight de storage/env, compativel com provider ativo (Supabase temporario ou MinIO quando concluido) | Implementada em codigo 2026-07-10 para MinIO/S3; pendente preflight real na VPS |
+| DRY-5 | Implementar `WarehouseCoverageService`/API para cobertura e qualidade do warehouse | Implementada em codigo 2026-07-10; pendente dados reais na VPS |
+| DRY-6 | Agendar pos-processamento (`link_trials_to_assets`, `deduplicate_assets`, `compute_confidence_scores`) apos primeira ingestao validada | Pendente DRY-2/DRY-5 e smoke-run real |
+| DRY-7 | Primeiro incremento CT.gov `resultsSection` para endpoints/resultados/adverse events | Pendente backbone estavel |
+
+### Fora de escopo desta correcao
+
+Remover Supabase do runtime, implementar JWT proprio, implementar MinIO/S3-compatible, ANVISA, PMC full-text, congressos, press releases, investor decks, fontes licenciadas e mudancas amplas de arquitetura.
+
+---
 ## Ingestao recorrente e data warehouse proprietario - plano aprovado 2026-07-09 (cutover VPS autorizado)
 
 Marcus autorizou o cutover para fins de ingestao/operacionalizacao: a ingestao deve acontecer contra o PostgreSQL da VPS, nao mais contra a Supabase (Auth/JWKS/Storage permanecem ativos). Plano canonico: `project_state/plano_ingestao_fase_operacional.md`.
@@ -100,6 +138,29 @@ ANVISA, PMC full-text, congressos, press releases, investor decks, fontes licenc
 ### Cadencia alvo
 
 Backbone diario: ClinicalTrials.gov, PubMed, openFDA, DailyMed e freshness. Backbone semanal: Open Targets, EMA, retencao e qualidade/cobertura. Fontes event-driven entram apenas em ondas posteriores, apos estabilidade do backbone estruturado.
+
+---
+
+## Descomissionamento total da Supabase - plano aprovado 2026-07-09
+
+Marcus aprovou remover a Supabase por completo do runtime da GennomX AI. O banco principal ja foi cortado para a VPS; agora a migracao final substitui Auth/JWKS e Storage por componentes proprios.
+
+Plano canonico: `project_state/plano_remocao_supabase_jwt_minio.md`.
+
+### Etapas planejadas
+
+| Etapa | Escopo | Estado |
+|---|---|---|
+| SUPA-0 | Mapear usos remanescentes de Supabase no backend/frontend/docs | Concluida na analise inicial |
+| SUPA-1 | Implementar JWT proprio no backend e middleware/frontend | Concluida |
+| SUPA-2 | Substituir raw payload por MinIO/S3-compatible | Concluida |
+| SUPA-3 | Remover `@supabase/*`, `supabase` Python e envs antigas | Concluida |
+| SUPA-4 | Atualizar docs, changelog, progress e runbook | Em andamento |
+| SUPA-5 | Validar login, rotas protegidas, upload raw e deploy | Concluida |
+
+### Observacao operacional
+
+O front-end e o backend ja leem `AUTH_*`/`MINIO_*` e usam JWT proprio + MinIO no caminho de login e storage. A pendencia restante desta etapa e alinhar a documentacao operacional/historica ao novo runtime.
 
 ---
 
@@ -445,5 +506,4 @@ verde no GitHub ⏳ (depende do commit/push, A5 adiado); nenhuma regressão ✅
 implementados e validados localmente. A5 (primeiro commit) fica a critério do usuário.
 Pendências remanescentes: validação manual em ambiente rodando e atualização de
 documentação (docs/05, docs/07, docs/11, findings.md).
-
 

@@ -1,6 +1,6 @@
 # GennomX AI — Deploy da aplicação na VPS Hostinger (topologia gennomx.com).
 #
-# Este compose sobe Redis + API + worker + beat na VPS, conectados ao PostgreSQL
+# Este compose sobe Redis + MinIO + API + worker + beat na VPS, conectados ao PostgreSQL
 # da stack `gennomx-ai-postgres-ready` pela rede Docker interna
 # `gennomx-ai-postgres-ready-private` (rede externa, já provisionada).
 #
@@ -55,6 +55,25 @@ services:
     networks:
       - gennomx_ai_app
 
+  minio:
+    image: minio/minio:RELEASE.2025-02-28T09-55-16Z
+    container_name: gennomx-ai-minio
+    command:
+      - "server"
+      - "/data"
+      - "--console-address"
+      - ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY_ID:?Set MINIO_ACCESS_KEY_ID in .env}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_ACCESS_KEY:?Set MINIO_SECRET_ACCESS_KEY in .env}
+    volumes:
+      - gennomx_ai_minio_data:/data
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - gennomx_ai_app
+
   worker:
     build:
       context: ../backend
@@ -72,6 +91,21 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
       REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:?AUTH_ADMIN_EMAIL must be set}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
+      AUTH_ADMIN_PASSWORD_HASH: ${AUTH_ADMIN_PASSWORD_HASH:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ALGORITHM: ${AUTH_JWT_ALGORITHM:-HS256}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-gennomx-ai}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE:-gennomx-dashboard}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL:-http://minio:9000}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID:?MINIO_ACCESS_KEY_ID must be set}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY:?MINIO_SECRET_ACCESS_KEY must be set}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW:-gennomx-ai-raw}
+      MINIO_BUCKET_PROCESSED: ${MINIO_BUCKET_PROCESSED:-gennomx-ai-processed}
+      MINIO_BUCKET_EVIDENCE: ${MINIO_BUCKET_EVIDENCE:-gennomx-ai-evidence}
     command:
       - "celery"
       - "-A"
@@ -106,6 +140,21 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
       REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:?AUTH_ADMIN_EMAIL must be set}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
+      AUTH_ADMIN_PASSWORD_HASH: ${AUTH_ADMIN_PASSWORD_HASH:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ALGORITHM: ${AUTH_JWT_ALGORITHM:-HS256}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-gennomx-ai}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE:-gennomx-dashboard}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL:-http://minio:9000}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID:?MINIO_ACCESS_KEY_ID must be set}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY:?MINIO_SECRET_ACCESS_KEY must be set}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW:-gennomx-ai-raw}
+      MINIO_BUCKET_PROCESSED: ${MINIO_BUCKET_PROCESSED:-gennomx-ai-processed}
+      MINIO_BUCKET_EVIDENCE: ${MINIO_BUCKET_EVIDENCE:-gennomx-ai-evidence}
     command:
       - "celery"
       - "-A"
@@ -136,6 +185,21 @@ services:
       CELERY_BROKER_URL: ${CELERY_BROKER_URL:?CELERY_BROKER_URL must point to the VPS Redis}
       CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:?CELERY_RESULT_BACKEND must point to the VPS Redis}
       REDIS_URL: ${REDIS_URL:?REDIS_URL must point to the VPS Redis}
+      AUTH_ADMIN_EMAIL: ${AUTH_ADMIN_EMAIL:?AUTH_ADMIN_EMAIL must be set}
+      AUTH_ADMIN_PASSWORD: ${AUTH_ADMIN_PASSWORD:-}
+      AUTH_ADMIN_PASSWORD_HASH: ${AUTH_ADMIN_PASSWORD_HASH:-}
+      AUTH_JWT_SECRET: ${AUTH_JWT_SECRET:?AUTH_JWT_SECRET must be set}
+      AUTH_JWT_ALGORITHM: ${AUTH_JWT_ALGORITHM:-HS256}
+      AUTH_JWT_ISSUER: ${AUTH_JWT_ISSUER:-gennomx-ai}
+      AUTH_JWT_AUDIENCE: ${AUTH_JWT_AUDIENCE:-gennomx-dashboard}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-minio}
+      MINIO_ENDPOINT_URL: ${MINIO_ENDPOINT_URL:-http://minio:9000}
+      MINIO_ACCESS_KEY_ID: ${MINIO_ACCESS_KEY_ID:?MINIO_ACCESS_KEY_ID must be set}
+      MINIO_SECRET_ACCESS_KEY: ${MINIO_SECRET_ACCESS_KEY:?MINIO_SECRET_ACCESS_KEY must be set}
+      MINIO_REGION: ${MINIO_REGION:-us-east-1}
+      MINIO_BUCKET_RAW: ${MINIO_BUCKET_RAW:-gennomx-ai-raw}
+      MINIO_BUCKET_PROCESSED: ${MINIO_BUCKET_PROCESSED:-gennomx-ai-processed}
+      MINIO_BUCKET_EVIDENCE: ${MINIO_BUCKET_EVIDENCE:-gennomx-ai-evidence}
     depends_on:
       redis:
         condition: service_healthy
@@ -152,6 +216,7 @@ services:
 
 volumes:
   gennomx_ai_redis_data:
+  gennomx_ai_minio_data:
 
 networks:
   gennomx_ai_app:

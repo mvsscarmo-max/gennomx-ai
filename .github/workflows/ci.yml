@@ -78,9 +78,12 @@ jobs:
         run: pytest tests/unit/ -v --tb=short -q
         env:
           DATABASE_URL: postgresql+asyncpg://test:test@localhost/test
-          SUPABASE_URL: https://test.supabase.co
-          SUPABASE_ANON_KEY: test-anon-key
-          SUPABASE_SERVICE_ROLE_KEY: test-service-key
+          AUTH_ADMIN_EMAIL: admin@example.com
+          AUTH_ADMIN_PASSWORD: test-admin-password
+          AUTH_JWT_SECRET: test-jwt-secret-32-chars-minimum!!
+          MINIO_ENDPOINT_URL: http://minio:9000
+          MINIO_ACCESS_KEY_ID: test-minio-access
+          MINIO_SECRET_ACCESS_KEY: test-minio-secret
           API_SECRET_KEY: test-secret-key-32-chars-minimum!!
           REDIS_URL: redis://localhost:6379/0
           MCP_TOKEN_CHATGPT: test-chatgpt-token
@@ -142,9 +145,12 @@ jobs:
         env:
           DATABASE_URL: postgresql+asyncpg://gennomx:gennomx@localhost:5432/gennomx_test
           DATABASE_URL_SYNC: postgresql://gennomx:gennomx@localhost:5432/gennomx_test
-          SUPABASE_URL: https://test.supabase.co
-          SUPABASE_ANON_KEY: test-anon-key
-          SUPABASE_SERVICE_ROLE_KEY: test-service-key
+          AUTH_ADMIN_EMAIL: admin@example.com
+          AUTH_ADMIN_PASSWORD: test-admin-password
+          AUTH_JWT_SECRET: test-jwt-secret-32-chars-minimum!!
+          MINIO_ENDPOINT_URL: http://minio:9000
+          MINIO_ACCESS_KEY_ID: test-minio-access
+          MINIO_SECRET_ACCESS_KEY: test-minio-secret
           API_SECRET_KEY: test-secret-key-32-chars-minimum!!
           REDIS_URL: redis://localhost:6379/0
           MCP_TOKEN_CHATGPT: test-chatgpt-token

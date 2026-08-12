@@ -1,5 +1,8 @@
 # 00 — Contexto Estratégico da GennomX AI
 
+> **Atualização operacional em 2026-07-20:** PostgreSQL/pgvector na VPS, JWT local + Platform Auth
+> por flag e MinIO/S3-compatible substituem as referências históricas a Supabase como runtime.
+
 Este documento consolida a memória estratégica, conceitual e de produto da GennomX AI.
 
 ---
@@ -69,7 +72,7 @@ A GennomX AI deve adaptar a inspiração da Gosset para uma realidade própria:
 - priorizar fontes abertas e oficiais, sem integração inicial com bases pagas;
 - incluir ANVISA e perspectiva global desde o desenho;
 - ter banco e taxonomia em inglês, mas interface e relatórios em português/inglês;
-- adotar Supabase/PostgreSQL como base preferencial para MVP, quando tecnicamente viável;
+- adotar PostgreSQL/pgvector na VPS como base do MVP;
 - construir o MCP inicialmente para uso interno com ChatGPT, Claude e agentes privados;
 - tratar dashboard, MCP e API como prioridades, nessa ordem;
 - permitir edição corretiva no banco, sem exigir curadoria humana prévia em todos os dados;
@@ -289,7 +292,7 @@ MCP expõe ferramentas a modelos externos. Deve haver autenticação, autorizaç
 - Open Targets GraphQL API e data downloads.
 - ANVISA Dados Abertos, Bulário Eletrônico e consultas públicas.
 - MCP official documentation.
-- Supabase/PostgreSQL/pgvector documentation.
+- PostgreSQL/pgvector documentation.
 
 ---
 

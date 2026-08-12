@@ -207,6 +207,10 @@ Saídas:
 - adverse events;
 - evidence snippets.
 
+> **DRY-7 (2026-07-20):** a ferramenta retorna endpoints planejados/postados, resultados por
+> grupo e eventos adversos projetados da fixture ClinicalTrials.gov, todos com `evidence_id`.
+> Ausência de resultados ou safety gera `gaps`; valores negativos/inconclusivos não são filtrados.
+
 ### search_publications
 
 Busca publicações relacionadas.

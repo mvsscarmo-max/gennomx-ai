@@ -100,6 +100,102 @@ class SourceService:
             "updated_at": row[15].isoformat() if row[15] else None,
         }
 
+    async def get_source_by_slug(self, source_slug: str) -> dict:
+        row = (
+            await self.db.execute(
+                text("""
+                    SELECT id::text, name, slug, connector_status, is_enabled
+                    FROM data_sources
+                    WHERE slug = :slug
+                """),
+                {"slug": source_slug},
+            )
+        ).fetchone()
+        if not row:
+            raise NotFoundError("DataSource", source_slug)
+        return {
+            "id": row[0],
+            "name": row[1],
+            "slug": row[2],
+            "connector_status": row[3],
+            "is_enabled": row[4],
+        }
+
+    async def set_source_enabled(self, source_slug: str, is_enabled: bool, actor_id: str) -> dict:
+        source = await self.get_source_by_slug(source_slug)
+        await self.db.execute(
+            text("""
+                UPDATE data_sources
+                SET is_enabled = :is_enabled, updated_at = now()
+                WHERE slug = :slug
+            """),
+            {"slug": source_slug, "is_enabled": is_enabled},
+        )
+        await self._record_security_event(
+            actor_id=actor_id,
+            event_type="data_source_activation",
+            description=f"Data source '{source_slug}' {'enabled' if is_enabled else 'disabled'}",
+            metadata={"source_slug": source_slug, "is_enabled": is_enabled},
+        )
+        await self.db.commit()
+        source["is_enabled"] = is_enabled
+        return source
+
+    async def record_ingestion_trigger(
+        self,
+        source_slug: str,
+        actor_id: str,
+        *,
+        dry_run: bool,
+        max_records: int,
+        job_type: str,
+    ) -> None:
+        await self._record_security_event(
+            actor_id=actor_id,
+            event_type="ingestion_trigger",
+            description=f"{'Dry-run' if dry_run else 'Ingestion'} scheduled for '{source_slug}'",
+            metadata={
+                "source_slug": source_slug,
+                "dry_run": dry_run,
+                "max_records": max_records,
+                "job_type": job_type,
+            },
+        )
+        await self.db.commit()
+
+    async def record_storage_preflight(self, actor_id: str, result: dict) -> None:
+        await self._record_security_event(
+            actor_id=actor_id,
+            event_type="storage_preflight",
+            description="Raw storage preflight completed",
+            metadata=result,
+        )
+        await self.db.commit()
+
+    async def _record_security_event(
+        self, *, actor_id: str, event_type: str, description: str, metadata: dict
+    ) -> None:
+        import json
+
+        await self.db.execute(
+            text("""
+                INSERT INTO security_events
+                    (id, timestamp, event_type, severity, actor_type, actor_id,
+                     endpoint_or_tool, description, action_taken, status, metadata,
+                     created_at, updated_at)
+                VALUES
+                    (gen_random_uuid(), now(), :event_type, 'low', 'user', :actor_id,
+                     '/api/v1/sources', :description, 'logged', 'resolved',
+                     CAST(:metadata AS jsonb), now(), now())
+            """),
+            {
+                "event_type": event_type,
+                "actor_id": actor_id,
+                "description": description,
+                "metadata": json.dumps(metadata),
+            },
+        )
+
     async def list_jobs(
         self,
         source_id: UUID | None = None,

@@ -7,11 +7,13 @@ import type {
   OverviewStats,
   PaginatedResponse,
 } from "./types";
-import { getServerAccessToken } from "./supabase-server";
+import { cookies } from "next/headers";
+import { AUTH_COOKIE_NAME } from "./auth-token";
 import { apiUrl } from "./api-base";
 
 async function serverApiFetch<T>(path: string): Promise<T> {
-  let accessToken = await getServerAccessToken();
+  const cookieStore = await cookies();
+  let accessToken = cookieStore.get(AUTH_COOKIE_NAME)?.value;
   if (!accessToken && process.env.NODE_ENV !== "production" && process.env.E2E_BYPASS_AUTH === "true") {
     accessToken = process.env.API_INTERNAL_KEY;
   }

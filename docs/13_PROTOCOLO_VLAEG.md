@@ -1,8 +1,8 @@
-# 13 — Protocolo VLAEG aplicado à GennomX AI
+# 13 — Protocolo VLAEG 2.0 aplicado à GennomX AI
 
-Este documento adota formalmente o **Protocolo VLAEG Otimizado** (`../protocolo_vlaeg_otimizado.md`) como framework operacional padrão da GennomX AI e estabelece a ponte entre o protocolo e os artefatos já existentes no projeto.
+Este documento adota formalmente o **Protocolo VLAEG 2.0** (`../../protocolo_vlaeg_2.0.md`) como framework operacional padrão da GennomX AI.
 
-> **Fonte normativa do protocolo:** `protocolo_vlaeg_otimizado.md` (raiz).
+> **Fonte normativa do protocolo:** `../protocolo_vlaeg_2.0.md` (workspace raiz).
 > **Fonte normativa operacional do projeto:** `AGENTS.md` (raiz).
 > Em caso de conflito, a premissa central do `AGENTS.md` (§1) prevalece: a GennomX AI é infraestrutura de dados + MCP, não geradora final de relatórios.
 
@@ -56,7 +56,7 @@ O VLAEG sugere `docs/00–08`. A GennomX AI mantém uma estrutura **mais granula
 | — (sem equivalente VLAEG) | `docs/03_FONTES_E_INGESTAO.md`, `docs/04_MCP_TOOLS.md` (específicos do domínio) |
 | `architecture/` | `architecture/POP_ingestao.md`, `architecture/POP_mcp_tool.md` |
 | `tools/` | `tools/` (scripts determinísticos: handshake, checagens) |
-| `project_state/{task_plan,findings,progress}.md` | `project_state/` (sucede `TASKFLOW.md` e `MEMORY_FASE_*`, arquivados em `project_state/archive/`) |
+| Estado VLAEG 2.0 | `project_state/{CONTEXT,DECISIONS,TASKS,FINDINGS,PROGRESS}.md` + `project_state/plans/` |
 
 ---
 
@@ -64,7 +64,7 @@ O VLAEG sugere `docs/00–08`. A GennomX AI mantém uma estrutura **mais granula
 
 Antes de iniciar qualquer novo conector, ferramenta MCP, automação ou módulo:
 
-1. **V — Visão:** registrar problema, fonte da verdade, entrada/saída e critério de sucesso (em `project_state/task_plan.md` e/ou no doc de área).
+1. **V — Visão:** registrar problema, fonte da verdade, entrada/saída e critério de sucesso em um plano de `project_state/plans/` e em `TASKS.md`.
 2. **L — Link:** validar conectividade com `tools/handshake.py` (ou um novo healthcheck) **antes** de construir a lógica. Não desenvolver lógica final sobre integração não testada.
 3. **A — Arquitetura:** seguir o POP aplicável em `architecture/` e atualizar `docs/01`/`docs/02`/`docs/03`/`docs/04`.
 4. **E — Estilo:** quando houver interface, seguir `docs/07_DASHBOARD_UX.md`.
@@ -78,7 +78,10 @@ Toda mudança relevante deve: ser pequena e reversível (`AGENTS.md` §14), atua
 
 O rastreamento de execução do projeto vive em `project_state/`:
 
-- `project_state/task_plan.md` — plano de fases, escopo e critérios de conclusão (sucede `TASKFLOW.md`).
-- `project_state/progress.md` — histórico de execução, testes realizados e pendências (consolida `MEMORY_FASE_*`).
-- `project_state/archive/` — registros históricos preservados (`TASKFLOW.md`, `MEMORY_FASE_*.md`, planos e planilhas legadas), conforme `AGENTS.md` §14. Não atualizar.
-- `project_state/findings.md` — descobertas, limitações, hipóteses e decisões técnicas em aberto.
+- `project_state/CONTEXT.md` — snapshot oficial e plano ativo.
+- `project_state/DECISIONS.md` — decisões vigentes identificadas.
+- `project_state/TASKS.md` — tarefas vivas e seus critérios.
+- `project_state/plans/` — planos propostos, aprovados, ativos ou concluídos.
+- `project_state/FINDINGS.md` — achados e bloqueios vigentes.
+- `project_state/PROGRESS.md` — histórico de execução VLAEG 2.0.
+- `project_state/archive/v1/` — estado e planos v1 preservados, sem edição.

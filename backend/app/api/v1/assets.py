@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import CurrentUser, get_current_user
+from app.auth.dependencies import CurrentUser, require_read
 from app.core.responses import paginated
 from app.database import get_db
 from app.models.schemas.drug_asset import DrugAssetDetail
@@ -16,7 +16,7 @@ router = APIRouter()
 @router.get("", summary="List drug assets")
 async def list_assets(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
     q: str | None = Query(None, description="Full-text search query"),
     indication: str | None = Query(None),
     target: str | None = Query(None),
@@ -42,7 +42,7 @@ async def list_assets(
 async def get_asset(
     asset_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
 ) -> DrugAssetDetail:
     service = AssetService(db)
     return DrugAssetDetail.model_validate(await service.get_asset_detail(asset_id))

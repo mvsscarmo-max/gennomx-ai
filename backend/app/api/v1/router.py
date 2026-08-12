@@ -3,6 +3,7 @@ from fastapi import APIRouter
 from app.api.v1 import (
     assets,
     audit,
+    auth,
     companies,
     corrections,
     governance,
@@ -12,10 +13,12 @@ from app.api.v1 import (
     sources,
     targets,
     trials,
+    warehouse,
 )
 
 api_router = APIRouter()
 
+api_router.include_router(auth.router, prefix="/auth", tags=["auth"])
 api_router.include_router(overview.router, prefix="/overview", tags=["overview"])
 api_router.include_router(assets.router, prefix="/assets", tags=["drug-assets"])
 api_router.include_router(companies.router, prefix="/companies", tags=["companies"])
@@ -27,3 +30,4 @@ api_router.include_router(jobs.router, prefix="/jobs", tags=["ingestion-jobs"])
 api_router.include_router(audit.router, prefix="/audit", tags=["audit"])
 api_router.include_router(corrections.router, prefix="/corrections", tags=["data-governance"])
 api_router.include_router(governance.router, prefix="/governance", tags=["data-governance"])
+api_router.include_router(warehouse.router, prefix="/warehouse", tags=["warehouse"])

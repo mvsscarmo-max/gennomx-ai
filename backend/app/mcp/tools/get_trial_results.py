@@ -58,7 +58,7 @@ async def get_trial_results(arguments: dict, db: AsyncSession | None = None) -> 
         await db.execute(
             text(
                 f"SELECT id::text, endpoint_name, endpoint_type, category, timepoint, "
-                f"measurement_unit FROM endpoints ep "
+                f"measurement_unit, source_evidence_id::text FROM endpoints ep "
                 f"WHERE trial_id = :trial_id AND ep.is_current = true {ep_filter}"
             ),
             ep_params,
@@ -71,9 +71,22 @@ async def get_trial_results(arguments: dict, db: AsyncSession | None = None) -> 
             text(
                 "SELECT id::text, endpoint_id, arm_label, result_value, comparator_value, "
                 "p_value, hazard_ratio, confidence_interval_lower, confidence_interval_upper, "
-                "timepoint, n_analyzed, confidence_score, extraction_method "
+                "timepoint, n_analyzed, confidence_score, extraction_method, "
+                "source_evidence_id::text "
                 "FROM trial_results WHERE trial_id = :trial_id "
                 "AND is_current = true LIMIT 50"
+            ),
+            {"trial_id": resolved_id},
+        )
+    ).fetchall()
+
+    adverse_events = (
+        await db.execute(
+            text(
+                "SELECT id::text, event_name, seriousness, n_events, n_subjects_at_risk, "
+                "population, source_evidence_id::text FROM adverse_events "
+                "WHERE trial_id = :trial_id AND is_current = true "
+                "ORDER BY seriousness, event_name LIMIT 100"
             ),
             {"trial_id": resolved_id},
         )
@@ -97,6 +110,7 @@ async def get_trial_results(arguments: dict, db: AsyncSession | None = None) -> 
                 "category": e[3],
                 "timepoint": e[4],
                 "unit": e[5],
+                "evidence_id": e[6],
             }
             for e in endpoints
         ],
@@ -115,12 +129,25 @@ async def get_trial_results(arguments: dict, db: AsyncSession | None = None) -> 
                 "n_analyzed": r[10],
                 "confidence_score": r[11],
                 "extraction_method": r[12],
+                "evidence_id": r[13],
             }
             for r in results_rows
         ],
+        "adverse_events": [
+            {
+                "id": event[0],
+                "name": event[1],
+                "seriousness": event[2],
+                "n_events": event[3],
+                "n_at_risk": event[4],
+                "population": event[5],
+                "evidence_id": event[6],
+            }
+            for event in adverse_events
+        ],
     }
 
-    total = len(endpoints) + len(results_rows)
+    total = len(endpoints) + len(results_rows) + len(adverse_events)
     gaps = []
     if not endpoints:
         gaps.append("No endpoints found. May not have been ingested yet.")
@@ -128,6 +155,8 @@ async def get_trial_results(arguments: dict, db: AsyncSession | None = None) -> 
         gaps.append(
             "No quantitative results found. Results may be unpublished or not yet ingested."
         )
+    if not adverse_events:
+        gaps.append("No adverse events found. Safety results may be absent or not yet ingested.")
 
     return {
         "data": trial_data,

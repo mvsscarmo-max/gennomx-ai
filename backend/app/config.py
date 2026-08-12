@@ -26,15 +26,26 @@ class Settings(BaseSettings):
         return self.ENVIRONMENT == "development"
 
     # ── Database ─────────────────────────────────────────────────────────────
-    DATABASE_PROVIDER: Literal["supabase_postgres", "vps_postgres"] = "supabase_postgres"
+    DATABASE_PROVIDER: Literal["vps_postgres"] = "vps_postgres"
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/gennomx"
     WORKER_DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/gennomx"
     DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@localhost:5432/gennomx"
-    SUPABASE_URL: str = ""
-    SUPABASE_PROJECT_REF: str = ""
-    SUPABASE_ANON_KEY: str = ""
-    SUPABASE_SERVICE_ROLE_KEY: str = ""
-    SUPABASE_JWT_SECRET: str = ""
+    AUTH_ADMIN_EMAIL: str = ""
+    AUTH_ADMIN_PASSWORD: str = ""
+    AUTH_ADMIN_PASSWORD_HASH: str = ""
+    AUTH_JWT_SECRET: str = ""
+    AUTH_JWT_ALGORITHM: str = "HS256"
+    AUTH_JWT_ISSUER: str = "gennomx-ai"
+    AUTH_JWT_AUDIENCE: str = "gennomx-dashboard"
+    AUTH_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 7
+    AUTH_COOKIE_NAME: str = "gennomx_access_token"
+    # Preparado para P-4. Este verifier e independente do JWT local AUTH_JWT_*.
+    PLATFORM_AUTH_ENABLED: bool = False
+    PLATFORM_AUTH_ISSUER: str = "gennomx-platform"
+    PLATFORM_AUTH_AUDIENCE: str = "gennomx-admin"
+    PLATFORM_AUTH_TENANT_ID: str = "gennomx-internal"
+    PLATFORM_AUTH_PUBLIC_KEY: str = ""
+    PLATFORM_AUTH_COOKIE_NAME: str = "gennomx_platform_admin"
 
     # ── Redis / Celery ────────────────────────────────────────────────────────
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -42,14 +53,15 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
 
     # ── Storage ───────────────────────────────────────────────────────────────
-    STORAGE_BACKEND: Literal["supabase", "s3"] = "supabase"
-    SUPABASE_STORAGE_BUCKET_RAW: str = "gennomx-raw"
-    SUPABASE_STORAGE_BUCKET_PROCESSED: str = "gennomx-processed"
-    SUPABASE_STORAGE_BUCKET_EVIDENCE: str = "gennomx-evidence"
-    S3_ENDPOINT_URL: str = ""
-    S3_ACCESS_KEY_ID: str = ""
-    S3_SECRET_ACCESS_KEY: str = ""
-    S3_BUCKET_NAME: str = ""
+    STORAGE_BACKEND: Literal["minio"] = "minio"
+    MINIO_ENDPOINT_URL: str = "http://minio:9000"
+    MINIO_ACCESS_KEY_ID: str = ""
+    MINIO_SECRET_ACCESS_KEY: str = ""
+    MINIO_REGION: str = "us-east-1"
+    MINIO_BUCKET_RAW: str = "gennomx-ai-raw"
+    MINIO_BUCKET_PROCESSED: str = "gennomx-ai-processed"
+    MINIO_BUCKET_EVIDENCE: str = "gennomx-ai-evidence"
+    MINIO_SECURE: bool = False
 
     # ── API Auth ──────────────────────────────────────────────────────────────
     API_SECRET_KEY: str = ""
@@ -57,10 +69,6 @@ class Settings(BaseSettings):
     API_ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     API_INTERNAL_KEY: str = ""
     ROOT_PATH: str = ""
-    SUPABASE_JWT_AUDIENCE: str = "authenticated"
-    SUPABASE_JWT_ISSUER: str = ""
-    SUPABASE_JWKS_URL: str = ""
-
     # ── MCP ───────────────────────────────────────────────────────────────────
     MCP_TOKEN_CHATGPT: str = ""
     MCP_TOKEN_CLAUDE: str = ""
@@ -150,6 +158,7 @@ class Settings(BaseSettings):
         "non-small cell lung cancer,breast cancer,multiple myeloma,rheumatoid arthritis,"
         "type 2 diabetes,Alzheimer disease,melanoma,acute myeloid leukemia"
     )
+    INGEST_ADMIN_MAX_RECORDS: int = 500
 
     # ── Logging ───────────────────────────────────────────────────────────────
     LOG_LEVEL: str = "INFO"
@@ -184,19 +193,26 @@ class Settings(BaseSettings):
             "REDIS_URL": self.REDIS_URL,
             "CELERY_BROKER_URL": self.CELERY_BROKER_URL,
             "CELERY_RESULT_BACKEND": self.CELERY_RESULT_BACKEND,
-            "SUPABASE_URL": self.SUPABASE_URL,
+            "AUTH_ADMIN_EMAIL": self.AUTH_ADMIN_EMAIL,
+            "AUTH_JWT_SECRET": self.AUTH_JWT_SECRET,
+            "MINIO_ENDPOINT_URL": self.MINIO_ENDPOINT_URL,
+            "MINIO_ACCESS_KEY_ID": self.MINIO_ACCESS_KEY_ID,
+            "MINIO_SECRET_ACCESS_KEY": self.MINIO_SECRET_ACCESS_KEY,
             "API_INTERNAL_KEY": self.API_INTERNAL_KEY,
             "ROOT_PATH": self.ROOT_PATH,
             "MCP_TOKEN_CHATGPT": self.MCP_TOKEN_CHATGPT,
-            "SUPABASE_SERVICE_ROLE_KEY": self.SUPABASE_SERVICE_ROLE_KEY,
         }
         missing = [name for name, value in required.items() if not value]
+        if not (self.AUTH_ADMIN_PASSWORD or self.AUTH_ADMIN_PASSWORD_HASH):
+            missing.append("AUTH_ADMIN_PASSWORD_OR_HASH")
         insecure = [
             name
             for name, value in required.items()
             if value
             and any(marker in value.lower() for marker in ("change-this", "postgres:postgres"))
         ]
+        if self.AUTH_ADMIN_PASSWORD and len(self.AUTH_ADMIN_PASSWORD) < 12:
+            insecure.append("AUTH_ADMIN_PASSWORD")
         if missing or insecure:
             problems = [
                 *(f"missing:{name}" for name in missing),
@@ -256,10 +272,19 @@ class Settings(BaseSettings):
         ):
             if not url.startswith("rediss://"):
                 raise ValueError(f"Production {name} must use TLS (rediss://)")
-        if self.STORAGE_BACKEND == "supabase" and not self.SUPABASE_STORAGE_BUCKET_RAW:
-            raise ValueError("Production raw storage bucket must be configured")
-        if self.STORAGE_BACKEND == "s3":
-            raise ValueError("S3 raw storage adapter is not enabled in this release")
+        if not self.MINIO_ENDPOINT_URL.startswith(("http://", "https://")):
+            raise ValueError("Production MINIO_ENDPOINT_URL must be a valid URL")
+        if self.AUTH_JWT_ALGORITHM.upper() != "HS256":
+            raise ValueError("Production AUTH_JWT_ALGORITHM must be HS256")
+        if self.PLATFORM_AUTH_ENABLED:
+            if not self.PLATFORM_AUTH_PUBLIC_KEY:
+                raise ValueError("Platform Auth enabled but PLATFORM_AUTH_PUBLIC_KEY is missing")
+            if (
+                self.PLATFORM_AUTH_ISSUER != "gennomx-platform"
+                or self.PLATFORM_AUTH_AUDIENCE != "gennomx-admin"
+                or self.PLATFORM_AUTH_TENANT_ID != "gennomx-internal"
+            ):
+                raise ValueError("Platform Auth claims must match the platform contract")
         if self.LLM_ENABLE_NETWORK_CALLS:
             if not self.OPENCODE_API_KEY:
                 raise ValueError("LLM network calls enabled but OPENCODE_API_KEY is missing")
@@ -267,11 +292,6 @@ class Settings(BaseSettings):
                 raise ValueError("LLM network calls enabled but OPENCODE_BASE_URL is missing")
             if not self.LLM_MODEL_PREMIUM:
                 raise ValueError("LLM network calls enabled but LLM_MODEL_PREMIUM is missing")
-        if not self.SUPABASE_JWKS_URL:
-            raise ValueError(
-                "Production requires SUPABASE_JWKS_URL; the legacy HS256 fallback "
-                "(SUPABASE_JWT_SECRET) must not be the sole verification path in production"
-            )
         return self
 
 

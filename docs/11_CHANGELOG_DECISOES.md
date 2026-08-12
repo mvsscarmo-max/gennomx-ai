@@ -1,3 +1,59 @@
+## 2026-07-20 - Platform Auth, DRY-7, Supabase reconciliada e VLAEG 2.0
+
+**Area:** Segurança / Ingestão / Dados / Documentação
+
+**Decisão:** concluir AI-P1/P2/P4 no backend com Platform Auth RS256 aditivo por flag e scopes
+`ai:*`, sem alterar o autenticador MCP; implementar apenas o primeiro incremento DRY-7 do
+ClinicalTrials.gov por fixtures; manter o restante de INGEST-5 bloqueado; consolidar PostgreSQL VPS,
+JWT próprio e MinIO como runtime, R2 como futuro e Supabase como histórico; migrar o estado do
+projeto para VLAEG 2.0 preservando v1 em arquivo.
+
+**Implementação:** `CurrentUser` normaliza origem/subject/tenant/scopes; rotas de leitura,
+curadoria, dry-run, ingestão real, segurança e administração usam scopes específicos. O parser
+CT.gov cobre outcomes planejados, outcome measures e adverse events; projeções idempotentes
+referenciam evidência e preservam literais negativos/inconclusivos. `get_trial_results` retorna
+resultados, adverse events, evidências e gaps. SUPA-4 foi reconciliada com o código real.
+
+**Limites:** nenhum deploy, ingestão real, provisionamento R2, acesso a produção ou segredo.
+ANVISA, normalização de indicações, resolução de empresas, PMC e DRY-6 continuam bloqueados até
+validação real do backbone na VPS.
+
+**Status:** implementada localmente; validação ambiental da VPS permanece pendente.
+
+> Ponteiros `project_state/*.md` em entradas anteriores a esta data são históricos. O estado v1
+> correspondente está em `project_state/archive/v1/`; o estado vivo usa VLAEG 2.0.
+
+**Validação local final:** pytest `282 passed, 1 skipped`; 7 E2E; Ruff, mypy, Bandit, ESLint,
+TypeScript, build Next.js, verificacao de base path e auditorias Python/npm aprovados. O lock Python
+foi reconciliado sem dependencias Supabase/PyPDF2 e com MCP `>=1.28.1`.
+
+---
+
+## 2026-07-10 - Plano local: Platform Auth/Storage para GennomX AI
+
+**Area:** Seguranca / Plataforma / MCP / Storage
+
+**Decisao:** GennomX AI podera aceitar auth administrativo comum da Plataforma GennomX no dashboard, mas tokens MCP, roles PostgreSQL/RLS e buckets MinIO da AI permanecem segregados. Autorizacao administrativa deve ser por scopes `ai:*`, nao por role global implicita.
+
+**Plano local:** `project_state/plano_platform_admin_auth_storage.md`.
+
+**Status:** registrado; implementacao pendente.
+
+---## 2026-07-10 - Plano aprovado: correcao dos issues de ingestao com dry-run
+
+**Area:** Ingestao / Data warehouse / Operacao / Governanca
+
+**Decisao:** corrigir os issues da ativacao operacional da ingestao antes de habilitar recorrencia ampla, incluindo `dry_run` real nas tasks dos seis conectores implementados, ativacao auditavel de `data_sources`, disparo admin controlado com `max_records`, preflight de storage/env, camada de cobertura/qualidade do warehouse e agendamento posterior das tasks de pos-processamento.
+
+**Motivo:** o codigo ja possui seis conectores, tasks Celery e `beat_schedule`, mas o banco esta em estado bootstrap e a primeira ingestao real precisa de freios operacionais. O dry-run reduz risco antes de escrita em entidades, raw storage, evidencias e cursores incrementais. A cobertura do warehouse evita que a IA Host ou o dashboard superestimem maturidade de dados ainda vazios/parciais.
+
+**Fronteira com outra trilha:** Marcus informou que a substituicao de Supabase por JWT proprio + MinIO/S3-compatible ja esta sendo tocada por outro agente. Esta decisao nao autoriza remover Supabase, implementar JWT proprio ou implementar MinIO nesta trilha; a correcao deve integrar-se por contrato com o provider de storage/auth que estiver ativo.
+
+**Plano canonico:** `project_state/plano_correcao_issues_ingestao_dry_run.md`.
+
+**Status:** aprovado e registrado; implementacao ainda nao iniciada.
+
+---
 ## 2026-07-09 - Cutover VPS autorizado para ingestão + plano operacional + compose de deploy da aplicação
 
 **Area:** Banco de dados / Infraestrutura / Ingestão / Operação
@@ -1066,3 +1122,27 @@ Após a adoção do VLAEG, os históricos sucedidos permaneciam espalhados na ra
 **Status:** Implementada.
 
 
+
+
+## 2026-07-10 - Freios operacionais para a primeira ingestao VPS
+
+**Area:** Ingestao / Operacao / Governanca
+
+**Implementacao:** concluidas as fases de codigo DRY-0 a DRY-4 do plano de correcao. As seis tasks
+respeitam `data_sources.is_enabled` em execucao real; dry-run autorizado para a allowlist percorre
+fetch, parser e normalizer sem gravar dominio, raw ou cursor; `IngestionJob` e mantido como trilha
+auditavel. Foram adicionadas rotas administrativas para ativacao auditada, trigger limitado e
+preflight de storage MinIO/S3-compatible.
+
+**Cobertura:** `WarehouseCoverageService` e `GET /api/v1/warehouse/coverage` foram adicionados
+como DRY-5. A resposta separa inventário e rastreabilidade de uma alegação de cobertura de mercado
+e declara lacunas conhecidas para consumidores administrativos.
+
+**Decisao operacional:** nenhuma fonte foi ativada automaticamente. A sequencia obrigatoria na VPS
+e handshake, preflight, dry-run revisado, ativacao individual, smoke-run real e somente entao Beat.
+`partial` nao e tratado como falha operacional e nao avanca cursor.
+
+**Validacao:** testes unitarios/integracao dos controles e retry de jobs verdes; execucao real contra
+VPS, storage e fontes externas permanece pendente.
+
+---

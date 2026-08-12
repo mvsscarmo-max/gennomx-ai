@@ -44,7 +44,8 @@ O objetivo é formar uma infraestrutura proprietária com:
    ├─ 09_DEPLOY_E_OPERACAO.md
    ├─ 10_GLOSSARIO.md
    ├─ 11_CHANGELOG_DECISOES.md
-   └─ 12_STACK_TECNOLOGICA_REFINADA.md
+   ├─ 12_STACK_TECNOLOGICA_REFINADA.md
+   └─ 13_PROTOCOLO_VLAEG.md
 ```
 
 ---
@@ -56,9 +57,10 @@ O objetivo é formar uma infraestrutura proprietária com:
 - **FastAPI** para API interna, endpoints administrativos e servidor MCP;
 - **Celery + Redis** para jobs assíncronos no MVP;
 - **DuckDB nos workers** para processamento local/batch e validações pesadas;
-- **Supabase/PostgreSQL** como banco principal;
-- **Supabase Auth** para autenticação inicial;
-- **Supabase Storage ou S3-compatible storage** para arquivos brutos, PDFs e snapshots;
+- **PostgreSQL/pgvector na VPS** como banco principal;
+- **JWT local próprio**, com Platform Auth RS256 aditivo por feature flag;
+- **MinIO/S3-compatible** no runtime para raw, processed e evidence;
+- **Cloudflare R2** como alvo futuro, ainda não provisionado;
 - **PostgreSQL full-text search** para busca textual inicial;
 - **pgvector** em MVP avançado/fase 2;
 - **LiteLLM** como gateway de modelos de IA, com roteamento por criticidade, custo e validação por schema;
@@ -68,34 +70,33 @@ A decisão completa está em `docs/12_STACK_TECNOLOGICA_REFINADA.md`.
 
 ---
 
-## Banco Supabase
+## Banco e autenticação
 
-O backend usa SQLAlchemy/Alembic diretamente contra o PostgreSQL da Supabase. Para ambiente
-hospedado, configure no `.env`:
+O backend usa SQLAlchemy/Alembic contra PostgreSQL/pgvector. Para ambiente hospedado, configure:
 
-- `DATABASE_URL`: runtime FastAPI com role `gennomx_app`, preferencialmente via pooler Supabase.
-- `WORKER_DATABASE_URL`: Celery/workers com role `gennomx_worker`, também via pooler.
-- `DATABASE_URL_SYNC`: Alembic com role `gennomx_migrator`, preferencialmente via direct
-  connection.
+- `DATABASE_URL`: FastAPI/MCP com role `gennomx_app`.
+- `WORKER_DATABASE_URL`: Celery/workers com role `gennomx_worker`.
+- `DATABASE_URL_SYNC`: Alembic com role `gennomx_migrator`.
 
-Antes das migrações, execute `infra/supabase/bootstrap_roles.sql` no SQL Editor da Supabase após
-trocar os placeholders de senha. Depois rode as migrações a partir de `backend`:
+O bootstrap atual está em `infra/postgres/bootstrap_roles_vps.sql`. Depois rode, em ambiente
+autorizado, as migrações a partir de `backend`:
 
 ```bash
 alembic upgrade head
 ```
 
-As URLs Supabase com `sslmode=require` são aceitas no `.env`; o backend converte automaticamente
-para o formato esperado pelo driver asyncpg.
+Produção exige TLS, roles segregadas sem `SUPERUSER`/`BYPASSRLS` e porta 5432 não pública.
+Supabase aparece apenas em registros e artefatos históricos de migração.
 
 ---
 
 ## Leitura obrigatória antes de desenvolver
 
 1. `AGENTS.md`
-2. `docs/00_CONTEXTO_ESTRATEGICO.md`
-3. `docs/01_ARQUITETURA.md`
-4. Documentação específica da área a ser alterada.
+2. `project_state/CONTEXT.md`
+3. `project_state/TASKS.md` e o plano ativo
+4. `project_state/DECISIONS.md` e `project_state/FINDINGS.md`
+5. Documentação específica da área a ser alterada.
 
 ---
 

@@ -1,9 +1,10 @@
 "use client";
 
-import { Bell, Menu, Search } from "lucide-react";
+import { Bell, LogOut, Menu, Search } from "lucide-react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { withBasePath } from "@/lib/base-path";
+import { clearAccessTokenCookie } from "@/lib/auth-token";
 
 interface HeaderProps {
   title?: string;
@@ -19,6 +20,12 @@ export function Header({ title, onMenuClick }: HeaderProps) {
     if (query.trim()) {
       router.push(withBasePath(`/assets?q=${encodeURIComponent(query.trim())}`));
     }
+  };
+
+  const handleLogout = () => {
+    clearAccessTokenCookie();
+    router.replace(withBasePath("/login"));
+    router.refresh();
   };
 
   return (
@@ -58,6 +65,16 @@ export function Header({ title, onMenuClick }: HeaderProps) {
           aria-label="Notificações"
         >
           <Bell className="h-4 w-4" />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 transition-colors"
+          aria-label="Sair"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden sm:inline">Sair</span>
         </button>
 
         <div className="h-7 w-7 rounded-full bg-brand-rose/20 flex items-center justify-center">

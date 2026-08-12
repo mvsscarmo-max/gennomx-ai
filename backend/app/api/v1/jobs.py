@@ -4,10 +4,11 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import CurrentUser, get_current_user, require_admin
+from app.auth.dependencies import CurrentUser, require_ingest_run, require_read
 from app.core.responses import paginated
 from app.database import get_db
 from app.services.source_service import SourceService
+from workers.tasks.source_control import schedule_ingestion
 
 router = APIRouter()
 
@@ -15,7 +16,7 @@ router = APIRouter()
 @router.get("", summary="List ingestion jobs")
 async def list_jobs(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
     source_id: UUID | None = Query(None),
     source_slug: str | None = Query(None),
     status: str | None = Query(None, description="running | success | failed | partial"),
@@ -35,7 +36,7 @@ async def list_jobs(
 
 @router.get("/worker-status", summary="Get Celery worker status")
 async def worker_status(
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
 ) -> dict:
     try:
         from workers.celery_app import celery_app
@@ -66,57 +67,39 @@ async def worker_status(
         }
 
 
-def _retry_task_for_source(source_slug: str, job_type: str):
-    if source_slug == "clinicaltrials_gov":
-        from workers.tasks.ingest import run_clinicaltrials_ingest
-
-        return run_clinicaltrials_ingest.delay(job_type=job_type)
-    if source_slug in ("pubmed", "pubmed_pmc"):
-        from workers.tasks.ingest import run_pubmed_ingest
-
-        return run_pubmed_ingest.delay(job_type=job_type)
-    if source_slug == "openfda":
-        from workers.tasks.ingest import run_openfda_ingest
-
-        return run_openfda_ingest.delay(job_type=job_type)
-    if source_slug == "dailymed":
-        from workers.tasks.ingest import run_dailymed_ingest
-
-        return run_dailymed_ingest.delay(job_type=job_type)
-    if source_slug == "open_targets":
-        from workers.tasks.ingest import run_opentargets_ingest
-
-        return run_opentargets_ingest.delay(job_type=job_type)
-    if source_slug == "ema":
-        from workers.tasks.ingest import run_ema_ingest
-
-        return run_ema_ingest.delay(job_type=job_type)
-    return None
-
-
 @router.post("/{job_id}/retry", summary="Retry a failed job")
 async def retry_job(
     job_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(require_admin)],
+    _user: Annotated[CurrentUser, Depends(require_ingest_run)],
 ) -> dict:
     service = SourceService(db)
     job = await service.get_job_detail(job_id)
     source_slug = job["source_slug"]
+    if job["job_type"] == "dry_run":
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Dry-run jobs must be rerun through the controlled source endpoint",
+        )
+    source = await service.get_source_by_slug(source_slug)
+    if not source["is_enabled"]:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Source is disabled and cannot be retried",
+        )
 
     try:
-        task = _retry_task_for_source(source_slug, job["job_type"] or "incremental")
+        task = schedule_ingestion(source_slug, job_type=job["job_type"] or "incremental")
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_501_NOT_IMPLEMENTED,
+            detail=f"Retry is not implemented for source '{source_slug}'",
+        ) from None
     except Exception as e:
         return {
             "success": False,
             "message": f"Could not schedule retry for job {job_id}: {e}",
         }
-
-    if task is None:
-        raise HTTPException(
-            status_code=status.HTTP_501_NOT_IMPLEMENTED,
-            detail=f"Retry is not implemented for source '{source_slug}'",
-        )
 
     return {
         "success": True,

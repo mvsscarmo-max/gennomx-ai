@@ -15,10 +15,14 @@ def production_settings(**overrides):
         "REDIS_URL": "rediss://:secret@redis.example/0",
         "CELERY_BROKER_URL": "rediss://:secret@redis.example/0",
         "CELERY_RESULT_BACKEND": "rediss://:secret@redis.example/1",
-        "SUPABASE_URL": "https://project.supabase.co",
-        "SUPABASE_SERVICE_ROLE_KEY": "service-secret",
-        "SUPABASE_JWKS_URL": "https://project.supabase.co/auth/v1/.well-known/jwks.json",
-        "SUPABASE_JWT_SECRET": "jwt-secret",
+        "AUTH_ADMIN_EMAIL": "admin@example.com",
+        "AUTH_ADMIN_PASSWORD": "very-strong-admin-password",
+        "AUTH_JWT_SECRET": "jwt-secret-32-chars-minimum!!!!!",
+        "AUTH_JWT_ISSUER": "gennomx-ai",
+        "AUTH_JWT_AUDIENCE": "gennomx-dashboard",
+        "MINIO_ENDPOINT_URL": "http://minio.example:9000",
+        "MINIO_ACCESS_KEY_ID": "minio-access",
+        "MINIO_SECRET_ACCESS_KEY": "minio-secret",
         "API_INTERNAL_KEY": "internal-secret",
         "ROOT_PATH": "/api/ai",
         "MCP_TOKEN_CHATGPT": "mcp-secret",
@@ -36,27 +40,23 @@ def test_secure_production_configuration_is_accepted():
 
 
 @pytest.mark.unit
-def test_secure_production_configuration_accepts_supabase_pooler_usernames():
-    settings = production_settings(
-        DATABASE_URL=(
-            "postgresql+asyncpg://gennomx_app.project-ref:secret@pooler.supabase.com/postgres"
-            "?ssl=require"
-        ),
-        WORKER_DATABASE_URL=(
-            "postgresql+asyncpg://gennomx_worker.project-ref:secret@pooler.supabase.com/postgres"
-            "?ssl=require"
-        ),
-    )
-    assert settings.is_production
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("AUTH_JWT_SECRET", ""),
+        ("MINIO_ACCESS_KEY_ID", ""),
+        ("MINIO_SECRET_ACCESS_KEY", ""),
+    ],
+)
+def test_production_rejects_missing_security_inputs(field, value):
+    with pytest.raises(ValidationError):
+        production_settings(**{field: value})
 
 
 @pytest.mark.unit
-@pytest.mark.parametrize("role", ["postgres", "service_role", "app"])
-def test_production_rejects_unapproved_database_role(role):
+def test_production_rejects_weak_admin_password():
     with pytest.raises(ValidationError):
-        production_settings(
-            DATABASE_URL=f"postgresql+asyncpg://{role}:secret@db.example/gennomx?ssl=require"
-        )
+        production_settings(AUTH_ADMIN_PASSWORD="short")
 
 
 @pytest.mark.unit
@@ -65,18 +65,12 @@ def test_production_rejects_unapproved_database_role(role):
     [
         ("DATABASE_URL", "postgresql+asyncpg://app:secret@db.example/gennomx"),
         ("REDIS_URL", "redis://:secret@redis.example/0"),
-        ("STORAGE_BACKEND", "s3"),
+        ("MINIO_ENDPOINT_URL", "minio.example:9000"),
     ],
 )
 def test_insecure_production_infrastructure_is_rejected(field, value):
     with pytest.raises(ValidationError):
         production_settings(**{field: value})
-
-
-@pytest.mark.unit
-def test_production_requires_jwks_url():
-    with pytest.raises(ValidationError):
-        production_settings(SUPABASE_JWKS_URL="")
 
 
 @pytest.mark.unit
@@ -89,22 +83,3 @@ def test_production_rejects_wildcard_api_allowed_hosts():
 def test_api_allowed_hosts_are_parsed_as_csv():
     settings = production_settings(API_ALLOWED_HOSTS="api.gennomx.example, mcp.gennomx.example")
     assert settings.api_allowed_hosts_list == ["api.gennomx.example", "mcp.gennomx.example"]
-
-@pytest.mark.unit
-def test_vps_database_provider_rejects_supabase_database_urls():
-    with pytest.raises(ValidationError):
-        production_settings(
-            DATABASE_PROVIDER="vps_postgres",
-            DATABASE_URL=(
-                "postgresql+asyncpg://gennomx_app.project-ref:secret@pooler.supabase.com/postgres"
-                "?ssl=require"
-            ),
-            WORKER_DATABASE_URL=(
-                "postgresql+asyncpg://gennomx_worker.project-ref:secret@pooler.supabase.com/postgres"
-                "?ssl=require"
-            ),
-            DATABASE_URL_SYNC=(
-                "postgresql://gennomx_migrator:secret@db.project-ref.supabase.co/postgres"
-                "?sslmode=require"
-            ),
-        )

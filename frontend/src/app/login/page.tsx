@@ -2,8 +2,9 @@
 
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { apiUrl } from "@/lib/api-base";
 import { withBasePath } from "@/lib/base-path";
+import { setAccessTokenCookie } from "@/lib/auth-token";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -15,12 +16,25 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const { error: authError } = await getSupabaseBrowserClient().auth.signInWithPassword({
-      email: String(form.get("email") || ""),
-      password: String(form.get("password") || ""),
+    const response = await fetch(apiUrl("api/v1/auth/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: String(form.get("email") || ""),
+        password: String(form.get("password") || ""),
+      }),
     });
+
+    let authError: string | undefined;
+    if (response.ok) {
+      const data = (await response.json()) as { access_token: string; expires_in: number };
+      setAccessTokenCookie(data.access_token, data.expires_in);
+    } else {
+      const payload = (await response.json().catch(() => ({}))) as { detail?: string };
+      authError = payload.detail ?? "Credenciais inválidas ou acesso não autorizado.";
+    }
     setLoading(false);
-    if (authError) return setError("Credenciais inválidas ou acesso não autorizado.");
+    if (authError) return setError(authError);
     router.replace(withBasePath("/"));
     router.refresh();
   }

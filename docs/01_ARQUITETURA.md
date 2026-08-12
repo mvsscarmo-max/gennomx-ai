@@ -1,10 +1,14 @@
 # 01 — Arquitetura da GennomX AI
 
-## Atualização de arquitetura de dados — 2026-07-09
+## Estado arquitetural vigente — 2026-07-20
 
-A primeira migração aprovada troca somente o banco principal: PostgreSQL hospedado na Supabase -> PostgreSQL/pgvector na VPS Hostinger. Supabase Auth/JWKS e Supabase Storage permanecem temporariamente e seguem fora do escopo deste corte. A arquitetura alvo desta rodada é, portanto, banco VPS + Auth Supabase + Storage Supabase, preservando dashboard, API, MCP, workers, raw payload e login.
+O alvo de banco é PostgreSQL/pgvector na VPS. O runtime de autenticação usa JWT local próprio e,
+quando `PLATFORM_AUTH_ENABLED=true`, também aceita o contrato administrativo RS256 da Plataforma.
+O runtime de object storage usa MinIO pela API S3-compatible nos buckets exclusivos
+`gennomx-ai-{raw,processed,evidence}`. Cloudflare R2 é evolução futura por trás do mesmo contrato e
+não foi provisionado. Supabase permanece somente no histórico de migração.
 
-Estado de staging em 2026-07-09: a stack PostgreSQL VPS `gennomx-ai-postgres-ready` está em rede privada, sem porta `5432` publicada, com Alembic em `head` (`0006`), extensões pgvector/pg_trgm/pgcrypto/uuid-ossp instaladas e roles dedicadas sem superuser/BYPASSRLS. Dados ainda não foram restaurados da Supabase porque o MCP Supabase e uma `SUPABASE_DIRECT_URL` funcional seguem indisponíveis nesta sessão.
+O Platform Auth não substitui JWT local, chave interna nem os tokens/scopes próprios do MCP.
 ## Governança operacional pré-gravação — 2026-06-21
 
 O caminho executável passa a ser: conector → raw imutável → normalização → staging/deduplicação
@@ -163,9 +167,9 @@ Responsável por:
 
 ### MVP recomendado
 
-- **PostgreSQL/pgvector na VPS** como banco relacional principal após o cutover banco-only; Supabase/PostgreSQL permanece como origem até o corte e como rollback temporário.
-- **Supabase Auth/JWKS** para autenticação temporária nesta rodada.
-- **Supabase Storage** para documentos brutos e arquivos processados nesta rodada; S3-compatible/MinIO fica para plano posterior.
+- **PostgreSQL/pgvector na VPS** como banco relacional principal.
+- **JWT local próprio + Platform Auth RS256 por flag** para a API administrativa.
+- **MinIO/S3-compatible** para documentos brutos e processados; R2 é alvo futuro.
 - **PostgreSQL full-text search** para busca textual inicial.
 - **pgvector** para embeddings em MVP avançado ou Fase 2.
 - **DuckDB nos workers** para processamento local/analítico de arquivos grandes, validações batch e exploração offline.
@@ -174,7 +178,7 @@ Responsável por:
 
 ### Escala futura
 
-- PostgreSQL/Supabase para entidades canônicas, permissões, dashboard e API.
+- PostgreSQL para entidades canônicas, permissões, dashboard e API.
 - Object storage para data lake bruto e processado.
 - OpenSearch/Elasticsearch para busca textual robusta.
 - BigQuery/Snowflake para analytics em larga escala, se o volume justificar.
@@ -593,7 +597,9 @@ Responsável por:
 
 ## 5.1 Recomendação para MVP
 
-A recomendação inicial foi Supabase/PostgreSQL. A decisão de 2026-07-09 migra o banco principal para PostgreSQL/pgvector na VPS, mantendo Supabase Auth/Storage temporariamente. A escolha de PostgreSQL como núcleo permanece por combinar:
+A recomendação inicial foi Supabase/PostgreSQL. A arquitetura vigente concluiu sua remoção do
+runtime: PostgreSQL/pgvector vive na VPS, auth é próprio/federado por flag e storage é
+S3-compatible. A escolha de PostgreSQL como núcleo permanece por combinar:
 
 - banco relacional maduro;
 - autenticação integrada;
@@ -604,7 +610,7 @@ A recomendação inicial foi Supabase/PostgreSQL. A decisão de 2026-07-09 migra
 - pgvector;
 - bom equilíbrio entre velocidade de MVP e robustez.
 
-## 5.2 Por que PostgreSQL/Supabase no MVP
+## 5.2 Por que PostgreSQL no MVP
 
 Vantagens:
 
@@ -709,3 +715,9 @@ Requisitos mínimos:
 - mascaramento ou hashing de dados sensíveis operacionais.
 
 ---
+
+## Integração com a Plataforma GennomX
+
+O backend aceita autenticação administrativa da Plataforma GennomX por feature flag e scopes
+`ai:*`. Essa camada não substitui tokens MCP de ChatGPT/Claude/agentes, não concede acesso direto
+ao SQL e não relaxa RLS/roles do PostgreSQL.

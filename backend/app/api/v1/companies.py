@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import CurrentUser, get_current_user
+from app.auth.dependencies import CurrentUser, require_read
 from app.core.responses import paginated
 from app.database import get_db
 from app.services.company_service import CompanyService
@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("", summary="List companies")
 async def list_companies(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
     q: str | None = Query(None),
     company_type: str | None = Query(None),
     country: str | None = Query(None),
@@ -33,7 +33,7 @@ async def list_companies(
 async def get_company(
     company_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
 ) -> dict:
     service = CompanyService(db)
     return await service.get_company_detail(company_id)

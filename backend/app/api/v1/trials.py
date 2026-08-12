@@ -4,7 +4,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.auth.dependencies import CurrentUser, get_current_user
+from app.auth.dependencies import CurrentUser, require_read
 from app.core.responses import paginated
 from app.database import get_db
 from app.services.trial_service import TrialService
@@ -15,7 +15,7 @@ router = APIRouter()
 @router.get("", summary="List clinical trials")
 async def list_trials(
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
     q: str | None = Query(None),
     nct_id: str | None = Query(None),
     phase: str | None = Query(None),
@@ -43,7 +43,7 @@ async def list_trials(
 async def get_trial(
     trial_id: UUID,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _user: Annotated[CurrentUser, Depends(get_current_user)],
+    _user: Annotated[CurrentUser, Depends(require_read)],
 ) -> dict:
     service = TrialService(db)
     return await service.get_trial_detail(trial_id)

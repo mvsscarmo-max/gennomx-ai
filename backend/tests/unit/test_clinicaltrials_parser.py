@@ -1,5 +1,8 @@
 """Unit tests for ClinicalTrialsParser."""
 
+import json
+from pathlib import Path
+
 import pytest
 
 from workers.connectors.clinicaltrials.parser import ClinicalTrialsParser
@@ -97,3 +100,32 @@ class TestClinicalTrialsParser:
     def test_parse_date_returns_none_for_empty(self):
         assert self.parser._parse_date("") is None
         assert self.parser._parse_date(None) is None
+
+    def test_parses_posted_outcomes_and_adverse_events_from_fixture(self):
+        fixture = Path(__file__).parents[1] / "fixtures/clinicaltrials/study_with_results.json"
+        parsed = self.parser.parse_study(json.loads(fixture.read_text(encoding="utf-8")))
+
+        assert parsed.has_results is True
+        assert len(parsed.result_outcomes) == 2
+        assert (
+            parsed.result_outcomes[0]["classes"][0]["categories"][0]["measurements"][0]["value"]
+            == "-2.4"
+        )
+        assert (
+            parsed.result_outcomes[1]["classes"][0]["categories"][0]["measurements"][0]["value"]
+            == "Not estimable"
+        )
+        assert len(parsed.adverse_events) == 3
+        assert {event["seriousness"] for event in parsed.adverse_events} == {
+            "serious",
+            "non_serious",
+        }
+
+    def test_trial_without_results_keeps_planned_outcomes_without_error(self):
+        fixture = Path(__file__).parents[1] / "fixtures/clinicaltrials/study_without_results.json"
+        parsed = self.parser.parse_study(json.loads(fixture.read_text(encoding="utf-8")))
+
+        assert parsed.has_results is False
+        assert parsed.primary_outcomes[0]["measure"] == "Progression-free survival"
+        assert parsed.result_outcomes == []
+        assert parsed.adverse_events == []

@@ -12,17 +12,13 @@ import type {
   TargetSummary,
   SecurityEventSummary,
 } from "./types";
+import { getAccessTokenFromDocumentCookie } from "./auth-token";
 import { apiUrl } from "./api-base";
 
 // ── Core fetcher ───────────────────────────────────────────────────────────────
 
 async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
-  let accessToken: string | undefined;
-  if (typeof window !== "undefined") {
-    const { getSupabaseBrowserClient } = await import("./supabase-browser");
-    const { data } = await getSupabaseBrowserClient().auth.getSession();
-    accessToken = data.session?.access_token;
-  }
+  const accessToken = getAccessTokenFromDocumentCookie();
   const res = await fetch(apiUrl(path), {
     headers: {
       "Content-Type": "application/json",
