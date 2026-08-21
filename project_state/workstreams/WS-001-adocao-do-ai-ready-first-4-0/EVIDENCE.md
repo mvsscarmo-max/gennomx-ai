@@ -47,6 +47,26 @@ Antes de `validate-links: illustrative-paths` no arquivo: 237 erros (224 de link
 
 ---
 
+
+## E-004 — G13 no tip da adoção 4.0
+
+**Tarefa:** T-012 · **Quando:** 2026-08-21T21:01:45Z · **Commit:** `d008aef9ee74938e633d0576331f04649aca088f`
+**Gate:** G13
+**Worktree:** `C:/Users/marcu/Desktop/Projetos IA/worktrees-t207/gennomx-ai`
+
+```console
+$ git rev-parse HEAD
+d008aef9ee74938e633d0576331f04649aca088f
+
+$ python -X utf8 -B tools/verify.py --ws WS-001 --exec-criteria
+G13 ÔÇö verifica├º├úo diferencial
+raiz: C:\Users\marcu\Desktop\Projetos IA\worktrees-t207\gennomx-ai
+
+[OK    ] g13-verify             352 verificacoes, 0 erro(s), 0 aviso(s)
+```
+
+**Conclusão sustentada:** G13 verde neste SHA (352 verificações, 0 erros). Não prova RC/G14 desta WS nem validador 100% verde (findings locais).
+
 ## Não provado
 
 - Commit da branch. G13 no tip. Pytest/frontend. RC e G14.
