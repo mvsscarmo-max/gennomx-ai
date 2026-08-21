@@ -16,7 +16,7 @@ A GennomX AI opera sob AI Ready First 4.0.0, com `AGENTS.md` residente enxuto, c
 - **Fora de escopo:** ingestão real, deploy VPS, DRY-6 / INGEST-5
 
 
-Arquivos previstos (G13/G6): `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `CHANGELOG.md`, `README.md`, `.agents/`, `docs/`, `docs/ai-ready/`, `docs/legacy/`, `tools/`, `federation/`, `project_state/`, `audits/`, `tests/`, `architecture/`, `protocolo_vlaeg_otimizado.md`.
+Arquivos previstos (G13/G6): `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `CHANGELOG.md`, `README.md`, `.agents/`, `docs/`, `docs/ai-ready/`, `docs/legacy/`, `tools/`, `federation/`, `project_state/`, `audits/`, `tests/`, `architecture/`, `backend/`, `protocolo_vlaeg_otimizado.md`.
 
 ## Abordagem técnica
 
