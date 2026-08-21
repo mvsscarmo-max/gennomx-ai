@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -81,6 +82,28 @@ class TestIaReadyAdoption(unittest.TestCase):
         self.assertTrue(callable(validate_coordination.run))
         self.assertTrue(callable(validate_links.run))
         self.assertTrue(callable(validate_skills.run))
+
+    def test_malformed_redaction_entry_fails_closed(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        import capture_policy  # noqa: E402
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            policy = root / ".agents" / "policy"
+            policy.mkdir(parents=True)
+            (policy / "capture-policy.yaml").write_text(
+                'redaction_patterns:\n'
+                '  - name: aws-key\n'
+                '    pattern: "AKIA[0-9A-Z]{16}"\n'
+                '  - name: broken\n'
+                '    not_a_pattern: "x"\n'
+                'redaction_allowlist_files:\n',
+                encoding="utf-8",
+            )
+            with self.assertRaises(ValueError):
+                capture_policy.load_redaction_patterns(root)
+            with self.assertRaises(capture_policy.CapturePolicyError):
+                capture_policy.require_redaction_patterns(root)
 
     def test_protocol_core_module(self) -> None:
         sys.path.insert(0, str(ROOT / "federation" / "protocol"))

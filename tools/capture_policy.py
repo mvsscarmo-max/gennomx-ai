@@ -14,6 +14,30 @@ class CapturePolicyError(RuntimeError):
     """Politica de captura ausente ou invalida no caminho de persistencia."""
 
 
+_PATTERN_ENTRY = re.compile(
+    r'^\s*- name:\s*([^\s]+)\s*\n\s*pattern:\s*("(?:[^"\\]|\\.)*")',
+    re.M,
+)
+_PATTERN_NAME = re.compile(r"^\s*- name:\s*\S+", re.M)
+
+
+def _parse_redaction_block(text: str, *, path: Path) -> list[tuple[str, re.Pattern[str]]]:
+    block = text.split("redaction_patterns:", 1)[1].split("redaction_allowlist_files:", 1)[0]
+    names = _PATTERN_NAME.findall(block)
+    matches = _PATTERN_ENTRY.findall(block)
+    if len(names) != len(matches):
+        raise ValueError(
+            f"malformed redaction_patterns in {path}: "
+            f"{len(names)} names, {len(matches)} patterns"
+        )
+    if not matches:
+        raise ValueError(f"no redaction patterns found in {path}")
+    compiled: list[tuple[str, re.Pattern[str]]] = []
+    for name, pattern in matches:
+        compiled.append((name, re.compile(json.loads(pattern))))
+    return compiled
+
+
 def load_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
     """Padroes de redacao declarados pelo projeto.
 
@@ -21,6 +45,9 @@ def load_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
     ausencia e a verificacao dedicada (`ai-ready::capture-missing`), com caminho
     e acao. Estourar aqui matava o validador antes de ele conseguir dizer o que
     faltava — o usuario recebia um traceback no lugar do diagnostico.
+
+    Bloco presente e parcialmente malformado NAO e silencio: um `- name:` sem
+    `pattern:` (ou regex invalida) recusa o bloco inteiro.
     """
     path = root / POLICY
     if not path.is_file():
@@ -28,11 +55,7 @@ def load_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
     text = path.read_text(encoding="utf-8")
     if "redaction_patterns:" not in text:
         return []
-    block = text.split("redaction_patterns:", 1)[1].split("redaction_allowlist_files:", 1)[0]
-    matches = re.findall(r'^\s*- name:\s*([^\s]+)\s*\n\s*pattern:\s*("(?:[^"\\]|\\.)*")', block, re.M)
-    if not matches:
-        raise ValueError(f"no redaction patterns found in {path}")
-    return [(name, re.compile(json.loads(pattern))) for name, pattern in matches]
+    return _parse_redaction_block(text, path=path)
 
 
 def require_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
@@ -40,7 +63,7 @@ def require_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
 
     O validador usa `load_redaction_patterns` para diagnosticar ausencia. Quem
     escreve evento, log ou payload nao pode herdar essa tolerancia: sem padroes,
-    a escrita passaria texto cru (AUD-001 R-01).
+    a escrita passaria texto cru.
     """
     path = root / POLICY
     if not path.is_file():
@@ -48,7 +71,10 @@ def require_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
     text = path.read_text(encoding="utf-8")
     if "redaction_patterns:" not in text:
         raise CapturePolicyError(f"redaction_patterns missing in {path}")
-    patterns = load_redaction_patterns(root)
+    try:
+        patterns = _parse_redaction_block(text, path=path)
+    except ValueError as exc:
+        raise CapturePolicyError(str(exc)) from exc
     if not patterns:
         raise CapturePolicyError(f"no redaction patterns in {path}")
     return patterns
