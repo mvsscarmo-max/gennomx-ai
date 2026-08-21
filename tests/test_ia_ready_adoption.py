@@ -45,6 +45,7 @@ class TestIaReadyAdoption(unittest.TestCase):
         import verify  # noqa: E402
         from coordination import errors, filesystem, provider, schema_validation  # noqa: E402
         from review import contract  # noqa: E402
+        from review import build_prompt, run_engine  # noqa: E402
 
         self.assertEqual(_common.repo_root().resolve(), ROOT.resolve())
         self.assertTrue(callable(capture_policy.load_redaction_patterns))
@@ -57,6 +58,8 @@ class TestIaReadyAdoption(unittest.TestCase):
         self.assertIsNotNone(provider)
         self.assertIsNotNone(errors)
         self.assertIsNotNone(contract)
+        self.assertTrue(callable(build_prompt.main))
+        self.assertTrue(callable(run_engine.main))
         self.assertTrue(callable(validate_ai_ready.run))
         self.assertTrue(callable(validate_state.run))
         self.assertTrue(callable(validate_coordination.run))
