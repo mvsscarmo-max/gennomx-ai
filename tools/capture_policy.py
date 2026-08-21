@@ -10,6 +10,10 @@ from typing import Any
 POLICY = Path(".agents") / "policy" / "capture-policy.yaml"
 
 
+class CapturePolicyError(RuntimeError):
+    """Politica de captura ausente ou invalida no caminho de persistencia."""
+
+
 def load_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
     """Padroes de redacao declarados pelo projeto.
 
@@ -29,6 +33,25 @@ def load_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
     if not matches:
         raise ValueError(f"no redaction patterns found in {path}")
     return [(name, re.compile(json.loads(pattern))) for name, pattern in matches]
+
+
+def require_redaction_patterns(root: Path) -> list[tuple[str, re.Pattern[str]]]:
+    """Padroes para persistencia e transmissao. Falha fechada se a politica faltar.
+
+    O validador usa `load_redaction_patterns` para diagnosticar ausencia. Quem
+    escreve evento, log ou payload nao pode herdar essa tolerancia: sem padroes,
+    a escrita passaria texto cru (AUD-001 R-01).
+    """
+    path = root / POLICY
+    if not path.is_file():
+        raise CapturePolicyError(f"capture policy missing: {path}")
+    text = path.read_text(encoding="utf-8")
+    if "redaction_patterns:" not in text:
+        raise CapturePolicyError(f"redaction_patterns missing in {path}")
+    patterns = load_redaction_patterns(root)
+    if not patterns:
+        raise CapturePolicyError(f"no redaction patterns in {path}")
+    return patterns
 
 
 def load_redaction_allowlist(root: Path) -> set[str]:

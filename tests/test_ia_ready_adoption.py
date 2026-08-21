@@ -49,6 +49,22 @@ class TestIaReadyAdoption(unittest.TestCase):
 
         self.assertEqual(_common.repo_root().resolve(), ROOT.resolve())
         self.assertTrue(callable(capture_policy.load_redaction_patterns))
+        self.assertTrue(callable(capture_policy.require_redaction_patterns))
+        patterns = capture_policy.require_redaction_patterns(ROOT)
+        self.assertGreater(len(patterns), 0)
+        sample = "pass" + "word = \"secret-value-16ch\""
+        redacted, hits = capture_policy.redact_text(sample, patterns)
+        self.assertTrue(hits)
+        self.assertNotIn("secret-value-16ch", redacted)
+        nested = capture_policy.redact_value(
+            {"note": "tok" + "en = \"secret-value-16ch\"", "ok": 1}, patterns
+        )
+        self.assertEqual(nested["ok"], 1)
+        self.assertNotIn("secret-value-16ch", nested["note"])
+        missing = ROOT / "does-not-exist"
+        self.assertEqual(capture_policy.load_redaction_patterns(missing), [])
+        with self.assertRaises(capture_policy.CapturePolicyError):
+            capture_policy.require_redaction_patterns(missing)
         self.assertTrue(callable(currency.check_frozen_banners))
         self.assertTrue(callable(validate.main))
         self.assertTrue(callable(verify.main))

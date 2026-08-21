@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-from capture_policy import load_redaction_patterns, redact_text, redact_value
+from capture_policy import require_redaction_patterns, redact_text, redact_value
 
 from .errors import CoordinationError
 from .provider import invoke_operation
@@ -118,7 +118,7 @@ class FilesystemProvider:
         self.owner_path = self.runtime_root / "owner.json"
         self.lock_path = self.runtime_root / ".write-lock"
         self.lock_timeout_seconds = lock_timeout_seconds
-        self.redaction_patterns = load_redaction_patterns(self.project_root)
+        self.redaction_patterns = require_redaction_patterns(self.project_root)
         self.schemas = SchemaValidator(self.project_root / ".agents" / "coordination" / "schemas")
         self.project_fingerprint = hashlib.sha256(
             os.path.normcase(str(self.project_root)).encode("utf-8")
