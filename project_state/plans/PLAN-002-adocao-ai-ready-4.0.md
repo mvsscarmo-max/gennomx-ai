@@ -15,6 +15,9 @@ A GennomX AI opera sob AI Ready First 4.0.0, com `AGENTS.md` residente enxuto, c
 - **Incluído:** protocolo, estado, bundle federado, realocação do AGENTS.md longo
 - **Fora de escopo:** ingestão real, deploy VPS, DRY-6 / INGEST-5
 
+
+Arquivos previstos (G13/G6): `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `CHANGELOG.md`, `README.md`, `.agents/`, `docs/`, `docs/ai-ready/`, `docs/legacy/`, `tools/`, `federation/`, `project_state/`, `audits/`, `tests/`, `architecture/`, `protocolo_vlaeg_otimizado.md`.
+
 ## Abordagem técnica
 
 Brownfield pelo Kit 4.0.2; produto permanece em `docs/rules/contrato-operacional.md`.
@@ -34,6 +37,7 @@ Brownfield pelo Kit 4.0.2; produto permanece em `docs/rules/contrato-operacional
 ## Critérios de validação
 
 - [ ] Validador local verde → comando: `python tools/validate.py` → evidência esperada: 0 erros
+- [x] Smoke da adoção 4.0 → comando: `python -B -m unittest tests.test_ia_ready_adoption` → evidência esperada: OK
 - [ ] Bundle federado instalado → comando: `python federation/protocol/core/protocol.py verify --root federation/protocol` → evidência esperada: status verified
 
 ## Gates aplicáveis

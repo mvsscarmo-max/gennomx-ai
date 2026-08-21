@@ -13,6 +13,12 @@ core_paths:
   - "federation"
   - "AGENTS.md"
   - "CLAUDE.md"
+  - "CHANGELOG.md"
+  - "README.md"
+  - "GEMINI.md"
+  - "audits"
+  - "tests"
+  - "protocolo_vlaeg_otimizado.md"
 
 test_path_patterns: []
 
