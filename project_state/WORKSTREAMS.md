@@ -7,10 +7,7 @@ ponteiro, **não o conteúdo**.
 
 ## Ativas
 
-
-| ID | Título | Objetivo | Risco | Fase | Atualizada | Executor |
-|---|---|---|---|---|---|---|
-| [WS-001](workstreams/WS-001-adocao-do-ai-ready-first-4-0/STATE.md) | Adocao do AI Ready First 4.0 | A GennomX AI opera sob AI Ready First 4.0.0 com AGENTS.md residente enxuto e validadores verdes | 3 | — | 2026-08-21 | cli |
+_nenhuma_
 
 ## Propostas
 
@@ -26,7 +23,9 @@ _nenhuma_
 
 ## Concluídas
 
-_nenhuma_
+| ID | Título | Objetivo | Risco | Fase | Atualizada | Executor |
+|---|---|---|---|---|---|---|
+| [WS-001](workstreams/WS-001-adocao-do-ai-ready-first-4-0/STATE.md) | Adocao do AI Ready First 4.0 | A GennomX AI opera sob AI Ready First 4.0.0 com AGENTS.md residente enxuto e validadores verdes | 3 | — | 2026-08-21 | cursor-grok-4.6 |
 
 ## Canceladas
 

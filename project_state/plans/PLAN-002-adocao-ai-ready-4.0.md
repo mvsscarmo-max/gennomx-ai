@@ -1,6 +1,6 @@
 # PLAN-002 — Adoção do AI Ready First 4.0.0
 
-**Status:** em execução
+**Status:** concluído
 **Criado em:** 2026-08-21 · **Autor:** Cursor
 **Aprovado por:** Marcus em 2026-08-21 (T-207 / PLAN-024 da raiz)
 **Workstream:** WS-001 · **Nível de risco:** 3

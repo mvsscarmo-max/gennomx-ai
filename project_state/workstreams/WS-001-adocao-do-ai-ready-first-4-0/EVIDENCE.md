@@ -67,6 +67,58 @@ raiz: C:\Users\marcu\Desktop\Projetos IA\worktrees-t207\gennomx-ai
 
 **Conclusão sustentada:** G13 verde neste SHA (352 verificações, 0 erros). Não prova RC/G14 desta WS nem validador 100% verde (findings locais).
 
+---
+
+## E-005 — G13 após correção da AUD-001
+
+**Tarefa:** T-012 · **Quando:** 2026-08-21T23:47:30Z · **Commit:** `83fa67bf0f57e3bf413920d50ef19afc2019aa46`
+**Gate:** G13
+
+```console
+$ git rev-parse HEAD
+83fa67bf0f57e3bf413920d50ef19afc2019aa46
+
+$ python -X utf8 -B tools/verify.py --ws WS-001 --exec-criteria
+[OK    ] g13-verify             378 verificacoes, 0 erro(s), 0 aviso(s)
+
+$ python -B -m unittest tests.test_ia_ready_adoption
+Ran 5 tests in 0.485s
+OK
+
+$ python -X utf8 -B tools/validate.py
+OK — 1171 verificacoes, 0 erros, 3 aviso(s).
+```
+
+**Conclusão sustentada:** G13 verde no tip que contém as correções R-01…R-04. Os avisos de paridade no `validate.py` sem `--exec-criteria` não são erro; o smoke e o validador rodaram nesta passagem do G13.
+
+---
+
+## E-006 — G14 aceite humano (WS-001)
+
+**Tarefa:** T-012 · **Quando:** 2026-08-21T23:48:00Z · **Commit:** `83fa67bf0f57e3bf413920d50ef19afc2019aa46`
+**Gate:** G14
+**Assinante:** Marcus (fundador)
+**RC:** AUD-001
+**G13:** E-005
+**Decisão:** ACEITO
+**Veredito:** ACEITO
+**Ressalvas:**
+- AUD-001 R-01…R-04 corrigidos nesta WS e verificados por G13 em `83fa67b`.
+- Fast-forward de `main` ainda pendente após este fechamento.
+
+**Autorizacao nesta sessao:** "Continue. Invoque gpt SOL para RC. Aceito G14."
+
+```console
+$ git rev-parse HEAD
+83fa67bf0f57e3bf413920d50ef19afc2019aa46
+```
+
+A workstream opera em worktree paralela `ws-t207-ia-ready-4.0`. Merge na destinação (`main`) sugerido por FF após este fechamento.
+
+**Conclusão sustentada:** o fundador leu o resumo do diff da adoção 4.0, o G13 e a RC AUD-001; aceitou. Agente transcreveu o aceite; nao assinou.
+
 ## Não provado
 
-- Commit da branch. G13 no tip. Pytest/frontend. RC e G14.
+- Fast-forward de `main` após este fechamento.
+- `python federation/protocol/core/protocol.py verify` — bundle-drift (`tests/test_protocol.py` ausente).
+
