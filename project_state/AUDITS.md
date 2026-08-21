@@ -3,14 +3,16 @@
 Índice das auditorias e diagnósticos. Detalhe vive no documento apontado — este arquivo é o
 ponteiro, **não o conteúdo**. IDs nunca são reutilizados.
 
-**Próximo ID:** AUD-001
+**Próximo ID:** AUD-002
 
 Vocabulário de status (`docs/ai-ready/state-currency.md`): `vigente` · `parcialmente-endereçada` ·
 `endereçada` · `superada-por AUD-NNN` · `histórica`.
 
 ## Registradas
 
-_nenhuma_
+| ID | Data | Tipo | Escopo | Status | Caminho | Levou a |
+|---|---|---|---|---|---|---|
+| AUD-001 | 2026-08-21 | revisao-de-ciclo | WS-001 / T-012 | vigente | [AUD-001-adocao-do-ai-ready-first-4-0.md](../audits/AUD-001-adocao-do-ai-ready-first-4-0.md) | R-01…R-04 |
 
 ## Regras
 

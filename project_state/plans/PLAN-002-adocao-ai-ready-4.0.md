@@ -36,7 +36,7 @@ Brownfield pelo Kit 4.0.2; produto permanece em `docs/rules/contrato-operacional
 
 ## Critérios de validação
 
-- [ ] Validador local verde → comando: `python tools/validate.py` → evidência esperada: 0 erros
+- [x] Validador local verde → comando: `python tools/validate.py` → evidência esperada: 0 erros
 - [x] Smoke da adoção 4.0 → comando: `python -B -m unittest tests.test_ia_ready_adoption` → evidência esperada: OK
 - [ ] Bundle federado instalado → comando: `python federation/protocol/core/protocol.py verify --root federation/protocol` → evidência esperada: status verified
 

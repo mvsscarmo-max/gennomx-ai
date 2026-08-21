@@ -23,6 +23,7 @@ A mecanica assinada esta verde no SHA avaliado, mas nao sustenta fechamento. A l
 - **Severidade:** critica
 - **Tipo:** defeito
 - Classe: critico
+- Status: corrigido
 - Arquivo: tools/capture_policy.py:31
 - Problema: `load_redaction_patterns` extrai entradas com regex e `require_redaction_patterns` aceita o resultado quando existe ao menos uma correspondencia. Se uma das varias entradas tiver estrutura malformada, ela e simplesmente omitida enquanto as demais mantem a lista nao vazia; o provider inicia e pode persistir sem o padrao perdido.
 - Por que importa: a implementacao se declara fail-closed antes de persistencia ou transmissao, mas uma corrupcao parcial transforma silenciosamente uma politica de seguranca em cobertura menor. Isso viola `protocol.md` R15.3 e a garantia de redacao anterior a escrita em `privacy-policy.md`.
@@ -32,6 +33,7 @@ A mecanica assinada esta verde no SHA avaliado, mas nao sustenta fechamento. A l
 - **Severidade:** alta
 - **Tipo:** estrutural
 - Classe: critico
+- Status: corrigido
 - Arquivo: project_state/plans/PLAN-002-adocao-ai-ready-4.0.md:40
 - Problema: o criterio `Smoke da adocao 4.0` esta marcado `[x]`, mas a fatia estrutural assinada informa explicitamente que esse criterio nao foi executado na passagem do SHA `fbd37ece...`. A evidencia versionada mais recente e anterior ao tip e ainda declara testes como nao provados.
 - Por que importa: `quality-gates.md` §4 e `protocol.md` R13.8 classificam teste nao executado descrito como aprovado como falsificacao de evidencia. O proprio commit auditado alterou o smoke e o comportamento de captura que ele deveria provar.
@@ -41,6 +43,7 @@ A mecanica assinada esta verde no SHA avaliado, mas nao sustenta fechamento. A l
 - **Severidade:** alta
 - **Tipo:** estrutural
 - Classe: contrato
+- Status: corrigido
 - Arquivo: project_state/workstreams/WS-001-adocao-do-ai-ready-first-4-0/STATE.md:20
 - Problema: `current_commit` e `validated_commit` continuam em `f4cd794f...`, embora o SHA avaliado seja `fbd37ece...`; o corpo ainda afirma que nao ha commit e que persistem 22 erros. `EVIDENCE.md` termina em `d008aef...` e nao registra as verificacoes assinadas do tip.
 - Por que importa: `STATE.md` deve representar o agora, e G7 exige `STATE.md`, ledger e evidencia atualizados. Um agente novo retomaria a workstream com uma fotografia materialmente falsa, contrariando `protocol.md` R5.1, R10.3 e R13.2.
@@ -50,6 +53,7 @@ A mecanica assinada esta verde no SHA avaliado, mas nao sustenta fechamento. A l
 - **Severidade:** media
 - **Tipo:** estrutural
 - Classe: risco
+- Status: corrigido
 - Arquivo: tools/capture_policy.py:43
 - Problema: o comentario atribui a mudanca a `AUD-001 R-01`, embora `AUD-001` ainda nao existisse no SHA avaliado nem no historico versionado apresentado. A referencia e circular ou e residuo de um julgamento anterior sem artefato.
 - Por que importa: a RC admite uma unica rodada e depende de proveniencia independente. Uma implementacao que cita antecipadamente o ID e o achado do parecer torna ambiguo se esta e a primeira rodada valida e contamina a trilha que deveria explicar a correcao.
