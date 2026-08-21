@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlaeg.local/federation/protocol/schemas/protocol-overlay.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "parameters", "patches"],
+  "properties": {
+    "$schema": {"type": "string", "format": "uri"},
+    "id": {"const": "base"},
+    "version": {"const": 1},
+    "parameters": {"type": "object", "additionalProperties": false},
+    "patches": {"type": "array", "maxItems": 0}
+  }
+}

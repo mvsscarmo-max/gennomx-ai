@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Protocolo VLAEG Otimizado
 
 **Framework operacional para criação de aplicações empresariais, automações, agentes de IA e sistemas digitais escaláveis**

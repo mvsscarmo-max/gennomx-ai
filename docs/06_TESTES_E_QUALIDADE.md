@@ -10,7 +10,7 @@
 Há testes para granularidade/freshness, falha fechada de política, staging de duplicatas, merge
 parcial não destrutivo, assertion governada, correção com supersession, sanitização/allowlist de
 scraping, contrato da migração `0004` e ordem arquivo→legal hold→exclusão. O resultado consolidado
-fica em `project_state/PROGRESS.md`.
+fica em `docs/legacy/project_state-vlaeg2/PROGRESS.md`.
 
 ## Regressões adicionadas após revisão externa — 2026-06-21
 

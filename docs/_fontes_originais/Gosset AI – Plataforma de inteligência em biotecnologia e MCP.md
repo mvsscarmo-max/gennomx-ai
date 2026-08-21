@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Gosset AI – Plataforma de inteligência em biotecnologia e MCP
 
 ## 1. Resumo executivo

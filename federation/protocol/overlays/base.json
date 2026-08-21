@@ -1,0 +1,7 @@
+{
+  "$schema": "https://vlaeg.local/federation/protocol/schemas/protocol-overlay.schema.json",
+  "id": "base",
+  "version": 1,
+  "parameters": {},
+  "patches": []
+}

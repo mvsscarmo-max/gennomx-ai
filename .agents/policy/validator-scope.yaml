@@ -1,0 +1,45 @@
+# Escopo dos validadores — GennomX AI
+version: 1.0.0
+
+core_paths:
+  - ".agents"
+  - "docs"
+  - "tools"
+  - "project_state"
+  - "backend"
+  - "frontend"
+  - "infra"
+  - "architecture"
+  - "federation"
+  - "AGENTS.md"
+  - "CLAUDE.md"
+
+test_path_patterns: []
+
+excluded_paths: []
+
+excluded_harness:
+  - ".superpowers"
+  - ".codex"
+  - ".claude"
+  - ".compozy"
+
+excluded_transient:
+  - "_inflight"
+
+excluded_vendor:
+  - "node_modules"
+  - ".venv"
+  - "venv"
+  - "site-packages"
+  - "__pycache__"
+  - "dist"
+  - "build"
+  - ".next"
+  - ".tmp"
+  - ".git"
+
+g14_signers:
+  - "Marcus"
+
+exec_allowlist: []

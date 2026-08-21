@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 02 — Plano Detalhado de Implementação da GennomX AI
 
 **Arquivo:** `02_plano_implementacao_gennomx_ai.md`  

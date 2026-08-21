@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - correcao de ingestao com dry-run
 
 **Data de aprovacao:** 2026-07-10  

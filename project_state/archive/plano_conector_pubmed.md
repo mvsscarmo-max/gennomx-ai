@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Plano de Execução — Conector PubMed (próxima fonte de ingestão)
 
 > **Status:** aprovado, pronto para execução por agente de IA.

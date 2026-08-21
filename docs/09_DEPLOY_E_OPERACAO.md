@@ -283,7 +283,7 @@ local do compose produtivo.
 8. Validar `/health`, `/ready`, login do dashboard, worker status e um job de ingestão controlado.
 9. Configurar frontend com `NEXT_PUBLIC_BASE_PATH=/ai` e `NEXT_PUBLIC_API_URL` apontando para
    `https://admin.gennomx.com/api/ai`.
-10. Registrar resultado em `project_state/PROGRESS.md` e decisões em `project_state/DECISIONS.md`.
+10. Registrar resultado em `docs/legacy/project_state-vlaeg2/PROGRESS.md` e decisões em `project_state/DECISIONS.md`.
 
 ## Política de retenção, particionamento e arquivamento — 2026-06-20
 
@@ -402,7 +402,7 @@ Diante de erro, falha de integração, bug ou comportamento inesperado, aplicar 
 2. **Isolar:** classificar a origem — dados, regra de negócio, integração/fonte, infraestrutura ou interface.
 3. **Corrigir:** ajustar código, configuração ou regra, em mudança pequena e reversível (`AGENTS.md` §14).
 4. **Testar:** executar teste unitário/integração/contrato pertinente, ou simulação via `tools/handshake.py`.
-5. **Documentar:** registrar em `project_state/PROGRESS.md` e, quando aplicável, `DECISIONS.md`.
+5. **Documentar:** registrar em `docs/legacy/project_state-vlaeg2/PROGRESS.md` e, quando aplicável, `DECISIONS.md`.
 6. **Prevenir recorrência:** criar validação, teste de regressão ou alerta.
 
 > **Regra:** o mesmo erro não deve ocorrer duas vezes sem gerar melhoria documental, teste ou validação preventiva.

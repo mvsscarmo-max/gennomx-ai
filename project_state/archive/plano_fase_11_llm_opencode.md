@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Plano de implementação — Fase 11: motor LLM via OPENCODE
 
 **Data:** 2026-06-23  

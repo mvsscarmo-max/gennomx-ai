@@ -1,0 +1,64 @@
+# Orçamento de contexto — Protocolo VLAEG IA-ready 4.0
+# Contexto residente é caro: cada linha sempre carregada tributa toda tarefa.
+# Ajuste os números ao projeto; a ESTRUTURA é que é normativa.
+
+version: 1.0.0
+
+resident:
+  # Teto do núcleo residente. Acima disso, o validador reprova e a correção é cortar,
+  # não suavizar (docs/context-model.md §6).
+  agents_md_max_chars: 6000
+  agents_md_max_lines: 120
+
+briefing:
+  max_chars: 6000
+  # Caminhos congelados nunca entram no briefing.
+  exclude_paths:
+    - docs/legacy/**
+    - docs/historico/**
+  # Ordem de corte quando estoura. Os quatro itens de never_drop não são cortáveis.
+  droppable_order:
+    - search_pointers
+    - open_risks
+    - related_decisions
+    - last_handoff_reference
+  never_drop:
+    - project_objective
+    - critical_rules
+    - current_task
+    - blockers
+
+delta:
+  max_chars: 4000
+  # Sem last_seen registrado, entregue apenas os N eventos mais recentes.
+  first_participation_events: 10
+  # Truncar sempre declara a contagem do que ficou de fora.
+  declare_omitted_count: true
+
+search:
+  default_scope: project
+  # Alterar para true exige os quatro requisitos abaixo, verificados pelo validador.
+  cross_project_search: false
+  cross_project_activation_requirements:
+    - registered_decision
+    - written_justification
+    - explicit_project_list
+    - review_date
+
+skills:
+  # Skills prioritárias com gatilho disparado não são cortáveis.
+  max_simultaneous: 5
+  cut_order:
+    - stack_skills
+    - documentation_skills
+    - non_mandatory_memory_skills
+
+global_preferences:
+  # Preferência global nunca sobrescreve regra local, decisão ativa, requisito,
+  # segurança, padrão técnico local ou política de privacidade.
+  can_override_project_rules: false
+  allowed_scope:
+    - language
+    - communication_style
+    - commit_message_format
+    - verbosity

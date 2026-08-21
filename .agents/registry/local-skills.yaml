@@ -1,0 +1,117 @@
+# Registro de skills locais — gerado por vlaeg_init.py
+#
+# Fonte canonica unica: .agents/skills/. Este arquivo INDEXA, nao copia.
+# content_hash divergente do conteudo real e ERRO: significa copia ou
+# edicao sem atualizacao do indice.
+
+version: 1.0.0
+canonical_root: .agents/skills
+skills:
+  - name: knowledge-promotion
+    layer: memory
+    path: .agents/skills/memory/knowledge-promotion
+    version: 1.0.0
+    risk: high
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: 00bc8608082b72fc
+  - name: memory-privacy
+    layer: memory
+    path: .agents/skills/memory/memory-privacy
+    version: 1.0.0
+    risk: critical
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: a33cc1751d61daa5
+  - name: memory-recall
+    layer: memory
+    path: .agents/skills/memory/memory-recall
+    version: 1.0.0
+    risk: low
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: 6147d17e655dd600
+  - name: session-handoff
+    layer: memory
+    path: .agents/skills/memory/session-handoff
+    version: 2.0.0
+    risk: medium
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: 86180e05d08c5950
+  - name: workstream-management
+    layer: memory
+    path: .agents/skills/memory/workstream-management
+    version: 1.1.0
+    risk: low
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: 91064ed64538f670
+  - name: deslop
+    layer: priority
+    path: .agents/skills/priority/deslop
+    version: 1.0.0
+    risk: low
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: 5e9db2b0099e8c11
+  - name: no-workarounds
+    layer: priority
+    path: .agents/skills/priority/no-workarounds
+    version: 1.0.0
+    risk: high
+    approval_status: approved
+    execution: local
+    files: 3
+    content_hash: 7ea61120a862cb5f
+  - name: qa-execution
+    layer: priority
+    path: .agents/skills/priority/qa-execution
+    version: 1.0.0
+    risk: medium
+    approval_status: approved
+    execution: local
+    files: 6
+    content_hash: 6fb67bb2c1a9fd62
+  - name: writing-agents-md
+    layer: priority
+    path: .agents/skills/priority/writing-agents-md
+    version: 1.0.0
+    risk: medium
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: ec964dccceabba4d
+  - name: writing-skills
+    layer: priority
+    path: .agents/skills/priority/writing-skills
+    version: 1.0.0
+    risk: medium
+    approval_status: approved
+    execution: local
+    files: 5
+    content_hash: b353878a184bcb99
+  - name: cycle-review
+    layer: protocol
+    path: .agents/skills/protocol/cycle-review
+    version: 1.0.0
+    risk: medium
+    approval_status: approved
+    execution: local
+    files: 2
+    content_hash: fa713dcd6e6450a5
+  - name: external-skill-intake
+    layer: protocol
+    path: .agents/skills/protocol/external-skill-intake
+    version: 1.0.0
+    risk: high
+    approval_status: approved
+    execution: local
+    files: 1
+    content_hash: 73f8444f6b3af263

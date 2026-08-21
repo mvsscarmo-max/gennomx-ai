@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - ingestao recorrente e data warehouse
 
 **Data:** 2026-07-09 (segunda sessão de continuidade)

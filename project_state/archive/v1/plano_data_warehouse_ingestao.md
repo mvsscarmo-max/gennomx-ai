@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - data warehouse e ingestao recorrente
 
 **Data de aprovacao:** 2026-07-09  

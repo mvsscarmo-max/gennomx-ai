@@ -1,0 +1,111 @@
+# Política de captura — Protocolo VLAEG IA-ready 4.0
+# Aplicada ANTES de qualquer persistência ou transmissão.
+# Limitação declarada: exclusão por caminho NÃO é prevenção completa de vazamento.
+# Ajuste ignore_paths ao projeto; a ESTRUTURA das cinco camadas é que é normativa.
+
+version: 1.0.0
+
+# Camada 1 — exclusão por caminho. Evento que toca estes caminhos é descartado localmente.
+ignore_paths:
+  - ".env"
+  - ".env.*"
+  - "**/.env"
+  - "**/*.pem"
+  - "**/*.key"
+  - "**/*.p12"
+  - "**/*.pfx"
+  - "**/id_rsa*"
+  - "**/id_ed25519*"
+  - "~/.ssh/**"
+  - "~/.gnupg/**"
+  - "~/.aws/**"
+  - "~/.config/gh/**"
+  - "**/*.sqlite"
+  - "**/*.db"
+  - "**/*.dump"
+  - "**/*.sql.gz"
+  - "private/**"
+  - "**/secrets/**"
+  - "**/credentials*"
+
+# Camada 2 — allowlist de tipos de evento. Fora desta lista: descarte com anotação de perda.
+allowed_event_types:
+  - user_message
+  - agent_message
+  - tool_call
+  - tool_result
+  - command_run
+  - test_run
+  - git_checkpoint
+  - decision
+  - finding
+  - status_change
+  - currency_change
+  - skill_selected
+  - skill_skipped
+  - gate_result
+  - handoff
+  - knowledge_proposed
+  - knowledge_approved
+  - divergence
+  - coordination_message
+  - coordination_ack
+  - coordination_claim
+  - coordination_conflict
+  - provider_status
+
+# Sempre excluído, qualquer que seja o tipo.
+never_capture:
+  - hidden_reasoning
+  - system_prompt
+  - provider_credentials
+  - encrypted_provider_records
+  - unknown_binary_formats
+
+# Camada 4 — redação. Substituição por [REDACTED:<name>].
+redaction_patterns:
+  - name: aws-key
+    pattern: "AKIA[0-9A-Z]{16}"
+  - name: github-token
+    pattern: "gh[pousr]_[A-Za-z0-9]{20,}"
+  - name: api-key
+    pattern: "sk-[A-Za-z0-9_-]{20,}"
+  - name: slack-token
+    pattern: "xox[abposr]-[A-Za-z0-9-]{10,}"
+  - name: jwt
+    pattern: "eyJ[A-Za-z0-9_-]{10,}\\.[A-Za-z0-9_-]{10,}\\."
+  - name: private-key
+    pattern: "-----BEGIN [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----[\\s\\S]*?-----END [A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?-----"
+  - name: signed-url
+    pattern: "[?&](X-Amz-Signature|Signature|sig|token)=[A-Za-z0-9%_-]{16,}"
+  - name: credential-pair
+    pattern: "(?i)\\b(password|passwd|senha|secret|api[_-]?key|token)\\s*[:=]\\s*(?:[\"'][^\"'\\r\\n]{8,}[\"']|[A-Za-z0-9_./+=-]{16,})"
+
+# Padrões que o validador ignora por serem exemplos do próprio protocolo.
+# Arquivos que DEFINEM os padrões e por isso os citam por necessidade. Mantenha curta:
+# cada entrada é um ponto cego deliberado.
+redaction_allowlist_files:
+  - "docs/ai-ready/privacy-policy.md"
+  - ".agents/policy/capture-policy.yaml"
+  - ".agents/skills/memory/memory-privacy/SKILL.md"
+  - "tools/validate_ai_ready.py"
+
+# Camada 5 — limites.
+limits:
+  event_summary_chars: 200
+  event_detail_chars: 4000
+  truncation_marker: "[TRUNCADO: {n} caracteres omitidos]"
+
+# Camada 9 — retenção.
+retention:
+  active_workstream_events: indefinite
+  closed_workstream_events_months: 12
+  evidence: project-lifetime
+  knowledge_historical: project-lifetime
+  candidates_expire_days: 90
+
+# Exclusão normativa (PROTOCOL.md §3.1). Estes termos não podem ser reintroduzidos.
+forbidden_mechanisms:
+  - sandbox
+  - ai-jail
+  - yolo

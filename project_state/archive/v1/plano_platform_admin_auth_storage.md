@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - Platform Admin Auth e storage segregado
 
 **Data:** 2026-07-10  

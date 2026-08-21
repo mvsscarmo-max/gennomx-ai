@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # POP — Ingestão de uma nova fonte de dados
 
 **Procedimento Operacional Padrão (VLAEG — Arquitetura, Camada 3).** Define o fluxo determinístico para adicionar/operar um conector. Ver `../docs/13_PROTOCOLO_VLAEG.md`, `../docs/03_FONTES_E_INGESTAO.md`.
@@ -59,4 +60,4 @@ Auditoria
 
 ## Encerramento
 
-- Atualizar `docs/03` (estado implementado + limitações), `project_state/PROGRESS.md` e registrar decisão em `project_state/DECISIONS.md`/`docs/11_CHANGELOG_DECISOES.md`.
+- Atualizar `docs/03` (estado implementado + limitações), `docs/legacy/project_state-vlaeg2/PROGRESS.md` e registrar decisão em `project_state/DECISIONS.md`/`docs/11_CHANGELOG_DECISOES.md`.

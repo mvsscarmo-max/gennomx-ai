@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 08 — Roadmap, Backlog e Critérios de Sucesso
 
 > Estado vigente em 2026-07-20: PostgreSQL/pgvector na VPS, JWT local + Platform Auth por flag e

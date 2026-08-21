@@ -306,7 +306,7 @@ Antes de desenvolver/operar a lógica de um conector, sua conectividade deve ser
 
 ## 4. Fontes de dados prioritárias
 
-> **Fonte da verdade:** a lista completa de fontes candidatas e sua ordem vive em **`project_state/fontes_priorizacao.xlsx`**. O roadmap de novos conectores (`docs/08_ROADMAP.md`, `project_state/TASKS.md`) segue a coluna `Prioridade` e os bloqueios vigentes.
+> **Fonte da verdade:** a lista completa de fontes candidatas e sua ordem vive em **`project_state/fontes_priorizacao.xlsx`**. O roadmap de novos conectores (`docs/08_ROADMAP.md`, `docs/legacy/project_state-vlaeg2/TASKS.md`) segue a coluna `Prioridade` e os bloqueios vigentes.
 
 ### 4.1 Fontes regulatórias
 

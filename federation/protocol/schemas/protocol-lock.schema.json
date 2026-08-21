@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlaeg.local/federation/protocol/schemas/protocol-lock.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "$id", "protocolVersion", "sourceCommit", "bundleDigest", "source", "overlay", "patches", "managedFiles", "fileDigests"],
+  "properties": {
+    "$schema": {"type": "string", "format": "uri"},
+    "$id": {"const": "https://vlaeg.local/federation/protocol/lock"},
+    "protocolVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "sourceCommit": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+    "bundleDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "source": {"const": "federation/protocol"},
+    "overlay": {"const": "base"},
+    "patches": {"type": "array", "maxItems": 0},
+    "managedFiles": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "fileDigests": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+    }
+  }
+}

@@ -93,8 +93,8 @@ Supabase aparece apenas em registros e artefatos históricos de migração.
 ## Leitura obrigatória antes de desenvolver
 
 1. `AGENTS.md`
-2. `project_state/CONTEXT.md`
-3. `project_state/TASKS.md` e o plano ativo
+2. `docs/legacy/project_state-vlaeg2/CONTEXT.md`
+3. `docs/legacy/project_state-vlaeg2/TASKS.md` e o plano ativo
 4. `project_state/DECISIONS.md` e `project_state/FINDINGS.md`
 5. Documentação específica da área a ser alterada.
 

@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 01 — Contexto Resumido e Pontos-Chave do Projeto GennomX AI
 
 **Arquivo:** `01_contexto_resumido_gennomx_ai.md`  

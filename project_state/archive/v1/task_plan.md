@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 
 # Arquivo VLAEG v1 - task_plan
 

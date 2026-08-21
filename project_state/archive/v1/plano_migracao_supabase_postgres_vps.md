@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - migracao Supabase PostgreSQL para PostgreSQL VPS
 
 **Data:** 2026-07-09  

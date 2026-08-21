@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 > ⚠️ **Histórico consolidado em `project_state/progress.md`.** Preservado como registro detalhado da fase (regra `AGENTS.md` §14).
 
 # MEMORY — Fase 6: Testing Infrastructure + CI/CD

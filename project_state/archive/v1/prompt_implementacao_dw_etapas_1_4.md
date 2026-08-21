@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - prompt de implementacao do data warehouse
 
 Você trabalhará no projeto `GennomX AI`, dentro do workspace da GennomX.

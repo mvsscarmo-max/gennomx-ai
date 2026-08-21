@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - plano de remocao da Supabase
 
 **Data:** 2026-07-09  

@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 ## 2026-07-20 - Platform Auth, DRY-7, Supabase reconciliada e VLAEG 2.0
 
 **Area:** Segurança / Ingestão / Dados / Documentação

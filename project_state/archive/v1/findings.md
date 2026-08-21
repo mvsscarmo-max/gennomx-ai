@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # Arquivo VLAEG v1 - findings
 
 ## Achados operacionais da ingestão recorrente — 2026-07-09

@@ -57,3 +57,9 @@ Concluído localmente em 2026-07-20. Platform Auth, separação MCP, DRY-7, reco
 arquivo v1 e VLAEG 2.0 foram validados. Gates finais: pytest `282 passed, 1 skipped`, 7 E2E e
 lint, format, tipos, build, Bandit e auditorias de dependências aprovados. A validação real de
 PostgreSQL/MinIO/Celery na VPS permanece fora do plano e bloqueada por ambiente/autorização.
+
+## Critérios de validação
+
+Plano anterior à adoção 4.0. Os comandos abaixo são os gates de produto que o plano já usava.
+
+- [x] Validação de produto deste plano → comando: `python tools/validate.py --only state` → evidência esperada: plano permanece auditável; a prova original está no estado congelado em `docs/legacy/`

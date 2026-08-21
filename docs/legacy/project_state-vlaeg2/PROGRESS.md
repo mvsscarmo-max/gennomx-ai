@@ -1,3 +1,4 @@
+<!-- vlaeg:frozen at=2026-08-21 by=D-007 reason="estado VLAEG 2.0 congelado; nao orienta planejamento" -->
 # PROGRESS - GennomX AI
 
 ## 2026-07-20 - Platform Auth, DRY-7 e VLAEG 2.0

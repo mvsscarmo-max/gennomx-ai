@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 13 — Protocolo VLAEG 2.0 aplicado à GennomX AI
 
 Este documento adota formalmente o **Protocolo VLAEG 2.0** (`../../protocolo_vlaeg_2.0.md`) como framework operacional padrão da GennomX AI.
@@ -78,10 +79,10 @@ Toda mudança relevante deve: ser pequena e reversível (`AGENTS.md` §14), atua
 
 O rastreamento de execução do projeto vive em `project_state/`:
 
-- `project_state/CONTEXT.md` — snapshot oficial e plano ativo.
+- `docs/legacy/project_state-vlaeg2/CONTEXT.md` — snapshot oficial e plano ativo.
 - `project_state/DECISIONS.md` — decisões vigentes identificadas.
-- `project_state/TASKS.md` — tarefas vivas e seus critérios.
+- `docs/legacy/project_state-vlaeg2/TASKS.md` — tarefas vivas e seus critérios.
 - `project_state/plans/` — planos propostos, aprovados, ativos ou concluídos.
 - `project_state/FINDINGS.md` — achados e bloqueios vigentes.
-- `project_state/PROGRESS.md` — histórico de execução VLAEG 2.0.
+- `docs/legacy/project_state-vlaeg2/PROGRESS.md` — histórico de execução VLAEG 2.0.
 - `project_state/archive/v1/` — estado e planos v1 preservados, sem edição.

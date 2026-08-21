@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 > ⚠️ **Histórico consolidado em `project_state/progress.md`.** Preservado como registro detalhado da fase (regra `AGENTS.md` §14).
 
 # MEMORY — Fase 2: Serviços FastAPI, Schemas Pydantic, Workers Celery

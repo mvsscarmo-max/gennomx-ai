@@ -1,0 +1,144 @@
+# Regras de roteamento de skills — Protocolo VLAEG AI Ready First
+#
+# O roteador seleciona o CONJUNTO MÍNIMO. Carregar todas destrói a economia que
+# torna skills úteis. Doutrina completa: docs/ai-ready/skill-routing.md
+
+version: 1.0.0
+
+# Gatilhos obrigatórios: se a condição vale, a skill entra — sem julgamento.
+# Pular um destes exige registro em skipped_skills no STATE.md.
+mandatory:
+  - skill: no-workarounds
+    when: "vai escrever, corrigir ou revisar código"
+    min_risk_level: 1
+  - skill: deslop
+    when: "vai declarar tarefa de código concluída, commitar ou abrir PR"
+    min_risk_level: 1
+  - skill: writing-agents-md
+    when: "vai criar ou editar AGENTS.md, CLAUDE.md ou GEMINI.md"
+    min_risk_level: 0
+  - skill: writing-skills
+    when: "vai criar, editar ou depurar uma skill"
+    min_risk_level: 0
+  - skill: cycle-review
+    when: "nível de risco >= 3, ou pedido explícito de Revisão de Ciclo"
+    min_risk_level: 3
+  - skill: qa-execution
+    when: "mudança visível ao usuário em candidato a release"
+    min_risk_level: 2
+    additional_condition: "user_visible_surface == true"
+  - skill: memory-recall
+    when: "sessão nova em workstream existente"
+    min_risk_level: 0
+  - skill: workstream-management
+    when: "criar, retomar, pausar, bloquear ou fechar workstream"
+    min_risk_level: 0
+  - skill: session-handoff
+    when: "encerrar com trabalho aberto, ou trocar de agente ou harness"
+    min_risk_level: 1
+  - skill: knowledge-promotion
+    when: "finding verificado que vale além da tarefa atual"
+    min_risk_level: 0
+  - skill: memory-privacy
+    when: "vai capturar, exportar ou registrar conteúdo potencialmente sensível"
+    min_risk_level: 0
+  - skill: external-skill-intake
+    when: "vai usar skill externa ainda não aprovada"
+    min_risk_level: 0
+
+# Anti-gatilhos: a skill NÃO entra nestes casos, mesmo parecendo relevante.
+negative:
+  qa-execution:
+    - "mudança sem superfície visível ao usuário"
+    - "substituir suíte automatizada"
+    - "auditar conformidade de implementação"
+  cycle-review:
+    - "edição ainda em andamento"
+    - "diff vazio"
+    - "pré-voo da RC falhando"
+    - "só G13 em risco 2"
+  deslop:
+    - "diff só de documentação"
+    - "diff só de formatação"
+  no-workarounds:
+    - "edição só de formatação"
+    - "edição só de documentação"
+  writing-skills:
+    - "escrever AGENTS.md"
+    - "escrever documentação humana"
+  writing-agents-md:
+    - "escrever skill sob demanda"
+    - "escrever README"
+  memory-recall:
+    - "carregar histórico completo"
+
+coordination:
+  coordination-provider-selection:
+    when: "ativar, trocar, degradar ou auditar Coordination Provider"
+  agent-registration:
+    when: "agente vai participar de trabalho coordenado"
+  agent-presence:
+    when: "atualizar heartbeat ou consultar presença"
+  capability-discovery:
+    when: "delegação depende de capability específica"
+  task-claiming:
+    when: "reservar tarefa ou escopo compartilhado"
+  inter-agent-communication:
+    when: "enviar, receber ou confirmar mensagem estruturada"
+  cross-agent-review:
+    when: "rotear revisão entre agentes independentes"
+  conflict-reporting:
+    when: "claim, contrato, decisão ou integração colide"
+  workstream-orchestration:
+    when: "decompor trabalho Multi-Harness supervisionado"
+  integration-management:
+    when: "integrar branches e worktrees de agentes"
+  provider-fallback:
+    when: "provider ativo falha ou fica indisponível"
+
+# Ordem de execução quando várias entram.
+execution_order:
+  - memory-recall
+  - workstream-management
+  - coordination-provider-selection
+  - agent-registration
+  - agent-presence
+  - capability-discovery
+  - task-claiming
+  - inter-agent-communication
+  - cross-agent-review
+  - conflict-reporting
+  - workstream-orchestration
+  - integration-management
+  - provider-fallback
+  - stack_skills
+  - no-workarounds        # guardrail ATIVO durante a implementação, não etapa isolada
+  - deslop                # antes da RC: não gaste crédito com slop local
+  - cycle-review
+  - qa-execution
+  - knowledge-promotion
+  - session-handoff
+
+# Sinais avaliados no FRAME e registrados no STATE.md.
+routing_signals:
+  - intent
+  - risk_level
+  - vlaeg_phase
+  - stack
+  - change_type
+  - estimated_diff_size
+  - needs_research
+  - needs_planning
+  - needs_review
+  - needs_validation
+  - needs_memory
+  - has_continuity
+  - needs_documentation
+
+# Skills externas: nunca residentes, nunca por semelhança de nome.
+external:
+  residency: never
+  requires_intake_before_first_use: true
+  blocked_never_executes: true
+  not_evaluated_requires_intake: true
+  auto_update: false

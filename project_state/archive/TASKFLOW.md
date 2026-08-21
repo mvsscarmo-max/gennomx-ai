@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 > ⚠️ **Documento sucedido — ver `project_state/task_plan.md`.**
 > A partir da adoção do Protocolo VLAEG (`docs/13_PROTOCOLO_VLAEG.md`), o plano de execução vivo passou para `project_state/task_plan.md`. Este arquivo é preservado como registro histórico (regra `AGENTS.md` §14) e não deve mais ser atualizado.
 

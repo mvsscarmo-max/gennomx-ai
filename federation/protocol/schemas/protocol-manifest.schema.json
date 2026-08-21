@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlaeg.local/federation/protocol/schemas/protocol-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["$schema", "$id", "manifestVersion", "protocolVersion", "source", "operations", "distribution", "tests", "files", "bundleDigest", "security"],
+  "properties": {
+    "$schema": {"type": "string", "format": "uri"},
+    "$id": {"type": "string", "format": "uri"},
+    "manifestVersion": {"const": 1},
+    "protocolVersion": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "source": {"const": "federation/protocol"},
+    "operations": {"type": "array", "const": ["diff", "install", "update", "verify"]},
+    "distribution": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "tests": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": {"type": "string", "pattern": "^[^/].*"},
+          "sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
+        }
+      },
+      "uniqueItems": true
+    },
+    "bundleDigest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "security": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commands", "network", "secrets", "sensitivePaths"],
+      "properties": {
+        "commands": {"const": "not-distributed"},
+        "network": {"const": "disabled-by-default"},
+        "secrets": {"const": "forbidden"},
+      "sensitivePaths": {"const": [".env", ".env.*", "*.key", "*.pem"]}
+      }
+    }
+  }
+}

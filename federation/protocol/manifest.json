@@ -1,0 +1,82 @@
+{
+  "$id": "https://vlaeg.local/federation/protocol/manifest.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "bundleDigest": "sha256:5703c899a6dac0f44dedf69b29558f58a63eceacf0e2ac0b45c1fa02cff95898",
+  "distribution": [
+    "README.md",
+    "VERSION",
+    "core/__init__.py",
+    "core/protocol.py",
+    "manifest.json",
+    "overlays/base.json",
+    "schemas/protocol-lock.schema.json",
+    "schemas/protocol-manifest.schema.json",
+    "schemas/protocol-overlay.schema.json",
+    "templates/protocol.lock.json"
+  ],
+  "files": [
+    {
+      "path": "README.md",
+      "sha256": "sha256:662dd3ba32b98726fa88355ecc3d546203855c9b86cb2efe6e657fbb43579d95"
+    },
+    {
+      "path": "VERSION",
+      "sha256": "sha256:59854984853104df5c353e2f681a15fc7924742f9a2e468c29af248dce45ce03"
+    },
+    {
+      "path": "core/__init__.py",
+      "sha256": "sha256:f3df0d9c728d88eb326ee443b8749903024ffa4d4b0faf567c425893a96ec80d"
+    },
+    {
+      "path": "core/protocol.py",
+      "sha256": "sha256:90a9fed238f0e84f967742be79ababaed8fc806138f0c13f707b61f63c4514e5"
+    },
+    {
+      "path": "overlays/base.json",
+      "sha256": "sha256:a6a751704bd0c4579b3ad232377c2a9897963dc6b3e5f594b91bb0993a33cc2a"
+    },
+    {
+      "path": "schemas/protocol-lock.schema.json",
+      "sha256": "sha256:189f7d3a662089f63e8443c2da62015bc5cdcfbe1a2e062b3f4398b837b0f0be"
+    },
+    {
+      "path": "schemas/protocol-manifest.schema.json",
+      "sha256": "sha256:3c9bfe84bed8bc1b4bd19e36c23c366399f703a9200b66610a38bef88dedfae2"
+    },
+    {
+      "path": "schemas/protocol-overlay.schema.json",
+      "sha256": "sha256:1fdd50800c2fec2dac037c7634ab907dd5181c5c6fcdbcbef787f7c96e0c9977"
+    },
+    {
+      "path": "templates/protocol.lock.json",
+      "sha256": "sha256:1187a3ea277cf30b56d72267736270df3639125f6f28da633373ad189627bde3"
+    },
+    {
+      "path": "tests/test_protocol.py",
+      "sha256": "sha256:5b656295bc506ef93a7ad6e0e9405165153554d9ccb691c82829621de694cdea"
+    }
+  ],
+  "manifestVersion": 1,
+  "operations": [
+    "diff",
+    "install",
+    "update",
+    "verify"
+  ],
+  "protocolVersion": "1.0.0",
+  "security": {
+    "commands": "not-distributed",
+    "network": "disabled-by-default",
+    "secrets": "forbidden",
+    "sensitivePaths": [
+      ".env",
+      ".env.*",
+      "*.key",
+      "*.pem"
+    ]
+  },
+  "source": "federation/protocol",
+  "tests": [
+    "tests/test_protocol.py"
+  ]
+}

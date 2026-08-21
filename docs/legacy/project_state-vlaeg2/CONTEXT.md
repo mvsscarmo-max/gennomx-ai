@@ -1,3 +1,4 @@
+<!-- vlaeg:frozen at=2026-08-21 by=D-007 reason="estado VLAEG 2.0 congelado; nao orienta planejamento" -->
 # CONTEXT - GennomX AI
 
 **Atualizado:** 2026-08-12

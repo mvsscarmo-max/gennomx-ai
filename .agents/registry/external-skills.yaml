@@ -1,0 +1,39 @@
+# Catálogo de skills externas — EXEMPLO
+#
+# Skills de terceiros CATALOGADAS, nunca instaladas e nunca residentes. Este arquivo é
+# um índice de possibilidades, não uma lista de dependências.
+#
+# REGRAS VERIFICADAS PELO VALIDADOR:
+#   - auto_update DEVE ser false. Mudar source_commit é decisão registrada (D-NNN).
+#   - toda entrada DEVE declarar approval_status.
+#   - approval_status inicial é not-evaluated; usar exige passar por external-skill-intake.
+#   - approval_status blocked NUNCA executa, em nenhuma circunstância.
+#
+# Por que auto_update: false. Uma skill externa é código que o agente vai seguir. Atualização
+# automática troca esse código sem que ninguém decida — e a mudança só aparece quando o
+# comportamento já mudou.
+
+version: 1.0.0
+auto_update: false
+
+sources:
+  - id: exemplo-upstream
+    repository: "<owner>/<repo>"
+    source_commit: "<sha de 40 caracteres — fixado, nunca uma branch>"
+    license: "<licença declarada pelo upstream>"
+    retrieved_at: "AAAA-MM-DD"
+
+skills:
+  - name: <nome-da-skill>
+    source: exemplo-upstream
+    path: "<caminho dentro do repositório de origem>"
+    approval_status: not-evaluated   # not-evaluated | approved | deprecated | blocked
+    risk: unknown                    # preenchido pelo intake
+    intake:
+      reviewed_by: ""
+      reviewed_at: ""
+      scripts_audited: false
+      dependencies_checked: false
+      license_checked: false
+      evidence: ""                   # EVIDENCE.md#E-NNN da workstream que fez o intake
+    notes: ""

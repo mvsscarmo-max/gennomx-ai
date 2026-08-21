@@ -1,0 +1,3 @@
+docs(T-012): adotar AI Ready First 4.0.0 na GennomX AI
+
+Instala o Kit 4.0.2 e o bundle federado 1.0.0, com o contrato de produto em docs/rules/. Divergencias do validador 4.0 ficam em F-006.
