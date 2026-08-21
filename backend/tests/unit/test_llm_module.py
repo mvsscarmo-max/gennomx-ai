@@ -284,7 +284,7 @@ class TestLLMClient:
 
             client = LLMClient(
                 base_url="https://api.opencode.ai",
-                api_key="sk-top-secret-key-12345",
+                api_key="testkey",
                 timeout_seconds=30,
             )
 
@@ -300,7 +300,7 @@ class TestLLMClient:
             # Verify the client was constructed with proper headers
             call_kwargs = mock_cls.call_args[1]
             assert "Authorization" in call_kwargs["headers"]
-            assert call_kwargs["headers"]["Authorization"] == "Bearer sk-top-secret-key-12345"
+            assert call_kwargs["headers"]["Authorization"] == "Bearer testkey"
 
     def test_client_calls_correct_endpoint(self, mock_response_json):
         import httpx

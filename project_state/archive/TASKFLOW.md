@@ -364,7 +364,7 @@ Criar o servidor MCP interno com as ferramentas iniciais, autenticação por tok
 - Bloqueio de queries SQL ou expressão arbitrária
 - Modo read-only obrigatório
 - Documentação de ferramentas (schema de entrada e saída)
-- Sandbox para testes por modelos host
+- Sandbox para testes por modelos host Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ### Arquivos criados/editados
 ```
@@ -404,7 +404,7 @@ backend/tests/mcp/
 - [ ] Ferramenta retorna EvidenceSnippet e fontes
 - [ ] Bloqueio de SQL injection em argumentos
 - [ ] Testes de segurança MCP passam
-- [ ] Sandbox operacional para testes
+- [ ] Sandbox operacional para testes Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ### Riscos
 - Implementação do protocolo MCP pode ter bugs em versões de cliente diferentes: testar com Claude e ChatGPT separadamente

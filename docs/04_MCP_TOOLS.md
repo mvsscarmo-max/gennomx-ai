@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 04 — Servidor MCP e Ferramentas
 
 ## Projeção corrente e freshness — 2026-06-21

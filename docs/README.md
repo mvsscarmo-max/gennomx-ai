@@ -3,7 +3,7 @@
 ## Fontes normativas (raiz)
 
 - [`../AGENTS.md`](../AGENTS.md) — instruções operacionais para agentes (fonte normativa do projeto).
-- [`../../protocolo_vlaeg_2.0.md`](../../protocolo_vlaeg_2.0.md) — framework operacional VLAEG 2.0 (fonte normativa de método).
+- Estado VLAEG 2.0 congelado em [`legacy/project_state-vlaeg2/`](legacy/project_state-vlaeg2/) (D-007; o arquivo `protocolo_vlaeg_2.0.md` não vive neste repositório).
 - [`../README.md`](../README.md) — visão geral para humanos.
 
 ## Documentos de área (`docs/`)

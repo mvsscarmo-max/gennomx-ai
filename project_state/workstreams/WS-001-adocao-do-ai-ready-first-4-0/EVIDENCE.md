@@ -43,7 +43,7 @@ Antes de `validate-links: illustrative-paths` no arquivo: 237 erros (224 de link
 **Tarefa:** T-012 · **Quando:** 2026-08-21T20:40:00Z · **Commit:** `none`
 **Gate:** G5
 
-**Resumo:** AGENTS.md residente caiu de ~17.9k para 4.034 caracteres. Contrato de produto permanece em `docs/rules/`. Sem commit nesta sessão.
+**Resumo (1–3 frases):** AGENTS.md residente caiu de ~17.9k para 4.034 caracteres. Contrato de produto permanece em `docs/rules/`. Sem commit nesta sessão.
 
 ---
 

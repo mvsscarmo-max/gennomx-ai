@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 03 — Fontes, Conectores e Ingestão
 
 ## Pipeline executável consolidado — 2026-06-21

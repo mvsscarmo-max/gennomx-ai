@@ -79,7 +79,7 @@ redaction_patterns:
   - name: signed-url
     pattern: "[?&](X-Amz-Signature|Signature|sig|token)=[A-Za-z0-9%_-]{16,}"
   - name: credential-pair
-    pattern: "(?i)\\b(password|passwd|senha|secret|api[_-]?key|token)\\s*[:=]\\s*(?:[\"'][^\"'\\r\\n]{8,}[\"']|[A-Za-z0-9_./+=-]{16,})"
+    pattern: "(?i)\\b(password|passwd|senha|secret|api[_-]?key|token)\\s*[:=]\\s*(?:[\"'](?![A-Za-z_][A-Za-z0-9_]*[\"'])[^\"'\\r\\n]{8,}[\"']|[A-Za-z0-9_/+-]{16,}(?![A-Za-z0-9_/+-])(?!\\())"
 
 # Padrões que o validador ignora por serem exemplos do próprio protocolo.
 # Arquivos que DEFINEM os padrões e por isso os citam por necessidade. Mantenha curta:

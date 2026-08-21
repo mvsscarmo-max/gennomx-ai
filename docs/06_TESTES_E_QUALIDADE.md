@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 06 — Testes Automáticos e Qualidade
 
 ## Cobertura de governança operacional — 2026-06-21
@@ -39,7 +40,7 @@ testes e acrescentar invariantes específicas do domínio.
 Ruff passou e 73 testes unitários passaram. Foram adicionados contratos para readiness fail-closed,
 migração UUID/FK/check/RLS, rollback e sincronização trial↔ativo. A geração SQL offline de upgrade
 `0001→0002` e downgrade foi aprovada. `docker compose config --quiet` passou; o sandbox apenas
-negou leitura do config global do Docker. Migração PostgreSQL real permanece no gate de CI.
+negou leitura do config global do Docker. Migração PostgreSQL real permanece no gate de CI. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ```bash
 python -m ruff check app workers tests migrations
@@ -403,7 +404,7 @@ Recomenda-se:
 - **test**: execução automática de testes;
 - **staging**: ambiente semelhante ao production;
 - **production**: ambiente estável;
-- **sandbox MCP**: ambiente para testes de ferramentas por modelos host.
+- **sandbox MCP**: ambiente para testes de ferramentas por modelos host. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ## 15.2 Gates mínimos antes de deploy
 

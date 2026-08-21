@@ -370,7 +370,7 @@ Responsável por uploads manuais e imports de arquivos.
 - sanitização de nomes de arquivos;
 - controle de permissões;
 - hash do arquivo original;
-- versionamento.
+- versionamento. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ### Testes
 
@@ -2634,7 +2634,7 @@ Recomenda-se:
 - **test**: execução automática de testes;
 - **staging**: ambiente semelhante ao production;
 - **production**: ambiente estável;
-- **sandbox MCP**: ambiente para testes de ferramentas por modelos host.
+- **sandbox MCP**: ambiente para testes de ferramentas por modelos host. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ## 15.2 Gates mínimos antes de deploy
 
@@ -2981,7 +2981,7 @@ Entregáveis:
 - logs MCP;
 - testes MCP;
 - documentação de ferramentas;
-- sandbox MCP.
+- sandbox MCP. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 Critérios de sucesso:
 
@@ -3031,7 +3031,7 @@ Entregáveis:
 - extração de tabelas;
 - extração de endpoints;
 - sandbox de arquivos;
-- testes de regressão com fixtures.
+- testes de regressão com fixtures. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 Critérios de sucesso:
 
@@ -3158,7 +3158,7 @@ Critérios de sucesso:
 - criar logs;
 - criar testes por ferramenta;
 - criar documentação;
-- criar sandbox.
+- criar sandbox. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ## 19.6 Infraestrutura
 

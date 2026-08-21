@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # 02 — Modelo de Dados Conceitual
 
 ## Implementação operacional da matriz — migração 0004

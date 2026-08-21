@@ -401,7 +401,7 @@ Responsável por uploads manuais e imports de arquivos.
 - sanitização de nomes de arquivos;
 - controle de permissões;
 - hash do arquivo original;
-- versionamento.
+- versionamento. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ### Testes
 

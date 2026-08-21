@@ -44,7 +44,7 @@ O arquivo v1 registra que `docker compose config` interpolou segredos. Não repe
 - F-GXAI-007: Supabase frontend removido no tip.
 - Parecer vigente: project_state/audits/parecer-p04-estrutura-fronteiras.md
 
-## F-006 — Validador 4.0: sandbox historico, credential-pair e links residuais
+## F-006 — Validador 4.0: sandbox historico, credential-pair e links residuais Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 **Data:** 2026-08-21 | **Status:** ativo | **Autoridade:** evidence | **Impacto:** 22 erros apos marcar arquivos de arquivo como illustrative-paths
 **Workstream:** WS-001 / T-012

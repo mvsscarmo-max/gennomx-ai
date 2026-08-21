@@ -140,7 +140,7 @@ Entregáveis:
 - logs MCP;
 - testes MCP;
 - documentação de ferramentas;
-- sandbox MCP.
+- sandbox MCP. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 Critérios de sucesso:
 
@@ -191,7 +191,7 @@ Entregáveis:
 - extração de tabelas;
 - extração de endpoints;
 - sandbox de arquivos;
-- testes de regressão com fixtures.
+- testes de regressão com fixtures. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 Critérios de sucesso:
 
@@ -318,7 +318,7 @@ Critérios de sucesso:
 - criar logs;
 - criar testes por ferramenta;
 - criar documentação;
-- criar sandbox.
+- criar sandbox. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ## 19.6 Infraestrutura
 

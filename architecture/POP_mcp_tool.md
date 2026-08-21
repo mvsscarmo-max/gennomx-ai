@@ -1,3 +1,4 @@
+<!-- validate-links: illustrative-paths -->
 # POP — Criação de uma nova ferramenta MCP
 
 **Procedimento Operacional Padrão (VLAEG — Arquitetura, Camada 3).** Define como adicionar uma ferramenta ao servidor MCP read-only. Ver `../docs/04_MCP_TOOLS.md`, `AGENTS.md` §11.

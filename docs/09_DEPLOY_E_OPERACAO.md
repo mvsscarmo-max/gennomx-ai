@@ -419,7 +419,7 @@ Recomenda-se:
 - **test**: execução automática de testes;
 - **staging**: ambiente semelhante ao production;
 - **production**: ambiente estável;
-- **sandbox MCP**: ambiente para testes de ferramentas por modelos host.
+- **sandbox MCP**: ambiente para testes de ferramentas por modelos host. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 ## 15.2 Gates mínimos antes de deploy
 

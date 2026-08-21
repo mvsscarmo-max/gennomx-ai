@@ -663,7 +663,7 @@ limitação do caminho/sandbox no Windows e não altera o resultado dos testes.
 - Escopos por cliente, comparação de token em tempo constante e rate limit Redis aplicados.
 - Request limitado, JSON validado, erro 500 sanitizado e entidades acessadas auditadas com limite.
 - Testes unitários adicionados para escopos e auditoria bounded.
-- Validação: 11 testes MCP aprovados e Ruff aprovado; apenas warning local de cache pytest por caminho sandbox foi emitido.
+- Validação: 11 testes MCP aprovados e Ruff aprovado; apenas warning local de cache pytest por caminho sandbox foi emitido. Sandbox de agente, ai-jail e YOLO estão excluídos por D-044; a menção neste parágrafo é isolamento de produto, histórico ou finding, não adoção.
 
 
 ---
