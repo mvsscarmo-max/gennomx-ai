@@ -106,9 +106,14 @@ def substantive_dirty_paths(status: str, *, ws: str,
 def git_diff_name_only(root: Path, a: str, b: str) -> list[str] | None:
     """Paths tocados em a..b. None = git falhou (fail-closed)."""
     proc = subprocess.run(
-        ["git", "-C", str(root), "diff", "--name-only", f"{a}..{b}"],
-        capture_output=True, text=True, encoding="utf-8", errors="replace",
+        ["git", "-C", str(root), "diff", "-z", "--name-only", f"{a}..{b}"],
+        capture_output=True,
     )
     if proc.returncode != 0:
         return None
-    return [line.replace("\\", "/") for line in proc.stdout.splitlines() if line.strip()]
+    paths = []
+    for raw in proc.stdout.split(b"\0"):
+        if not raw:
+            continue
+        paths.append(raw.decode("utf-8", "replace").replace("\\", "/"))
+    return paths

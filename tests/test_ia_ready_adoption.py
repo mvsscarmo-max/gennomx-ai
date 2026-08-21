@@ -43,7 +43,7 @@ class TestIaReadyAdoption(unittest.TestCase):
         import validate_skills  # noqa: E402
         import validate_state  # noqa: E402
         import verify  # noqa: E402
-        from coordination import errors, filesystem, provider  # noqa: E402
+        from coordination import errors, filesystem, provider, schema_validation  # noqa: E402
         from review import contract  # noqa: E402
 
         self.assertEqual(_common.repo_root().resolve(), ROOT.resolve())
@@ -52,6 +52,7 @@ class TestIaReadyAdoption(unittest.TestCase):
         self.assertTrue(callable(validate.main))
         self.assertTrue(callable(verify.main))
         self.assertTrue(callable(verify.run))
+        self.assertTrue(callable(schema_validation.SchemaValidator))
         self.assertIsNotNone(filesystem)
         self.assertIsNotNone(provider)
         self.assertIsNotNone(errors)
