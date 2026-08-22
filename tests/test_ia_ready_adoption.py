@@ -105,6 +105,16 @@ class TestIaReadyAdoption(unittest.TestCase):
             with self.assertRaises(capture_policy.CapturePolicyError):
                 capture_policy.require_redaction_patterns(root)
 
+    def test_structured_credential_field_is_redacted(self) -> None:
+        sys.path.insert(0, str(ROOT / "tools"))
+        import capture_policy  # noqa: E402
+
+        patterns = capture_policy.require_redaction_patterns(ROOT)
+        key = "pass" + "word"
+        nested = capture_policy.redact_value({key: "secret-value-16ch", "ok": 1}, patterns)
+        self.assertEqual(nested["ok"], 1)
+        self.assertNotIn("secret-value-16ch", nested[key])
+
     def test_protocol_core_module(self) -> None:
         sys.path.insert(0, str(ROOT / "federation" / "protocol"))
         from core import protocol  # noqa: E402

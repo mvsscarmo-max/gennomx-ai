@@ -98,11 +98,23 @@ def redact_text(value: str, patterns: list[tuple[str, re.Pattern[str]]]) -> tupl
     return value, redactions
 
 
+_CREDENTIAL_KEYS = re.compile(
+    r"(?i)^(password|passwd|senha|secret|api[_-]?key|token)$"
+)
+
+
 def redact_value(value: Any, patterns: list[tuple[str, re.Pattern[str]]]) -> Any:
     if isinstance(value, str):
         return redact_text(value, patterns)[0]
     if isinstance(value, list):
         return [redact_value(item, patterns) for item in value]
     if isinstance(value, dict):
-        return {key: redact_value(item, patterns) for key, item in value.items()}
+        redacted: dict[Any, Any] = {}
+        for key, item in value.items():
+            if isinstance(key, str) and _CREDENTIAL_KEYS.fullmatch(key):
+                if isinstance(item, str) and item:
+                    redacted[key] = "[REDACTED:credential-field]"
+                    continue
+            redacted[key] = redact_value(item, patterns)
+        return redacted
     return value
