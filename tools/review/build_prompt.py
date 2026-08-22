@@ -229,7 +229,7 @@ def load_or_run_fatia_a(root: Path, sha: str, source: Path | None) -> tuple[str,
 
 def load_or_run_g13(root: Path, sha: str, *, ws: str, base: str | None,
                     source: Path | None) -> tuple[str, str]:
-    cmd_parts = ["python", "-B", "tools/verify.py", "--ws", ws]
+    cmd_parts = ["python", "-B", "tools/verify.py", "--ws", ws, "--exec-criteria"]
     if base:
         cmd_parts += ["--base", base]
     command = " ".join(cmd_parts)
@@ -237,7 +237,7 @@ def load_or_run_g13(root: Path, sha: str, *, ws: str, base: str | None,
         text = source.read_text(encoding="utf-8", errors="replace")
         text, _ = authenticate_gate_output(text, expected_sha=sha, label="--g13")
     else:
-        argv = ["--ws", ws]
+        argv = ["--ws", ws, "--exec-criteria"]
         if base:
             argv += ["--base", base]
         buf = io.StringIO()

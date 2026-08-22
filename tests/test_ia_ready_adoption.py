@@ -57,6 +57,15 @@ class TestIaReadyAdoption(unittest.TestCase):
         redacted, hits = capture_policy.redact_text(sample, patterns)
         self.assertTrue(hits)
         self.assertNotIn("secret-value-16ch", redacted)
+        alpha = "pass" + "word = \"supersecretvalue\""
+        redacted_alpha, hits_alpha = capture_policy.redact_text(alpha, patterns)
+        self.assertTrue(hits_alpha)
+        self.assertNotIn("supersecretvalue", redacted_alpha)
+        punct = "tok" + "en=abcdefghijklmnop.qrstuvwx"
+        redacted_punct, hits_punct = capture_policy.redact_text(punct, patterns)
+        self.assertTrue(hits_punct)
+        self.assertNotIn("abcdefghijklmnop", redacted_punct)
+        self.assertNotIn("qrstuvwx", redacted_punct)
         nested = capture_policy.redact_value(
             {"note": "tok" + "en = \"secret-value-16ch\"", "ok": 1}, patterns
         )
