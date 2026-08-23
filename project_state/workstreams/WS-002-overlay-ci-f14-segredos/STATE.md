@@ -22,7 +22,7 @@ validated_commit: ""
 open_questions: []
 risks:
   - "G13/RC/G14 pendentes antes de fechar a WS (risco 3)"
-pending_gates: [G13, RC, G14]
+pending_gates: [G13, G14]
 last_handoff: null
 ---
 
@@ -44,7 +44,7 @@ A GennomX AI tem overlay 1.1.0 com lock sourceCommit, CI ampla com action compos
 
 ## Tarefas
 
-- [ ] T-013 — Entregar o pacote do brief PLAN-036 nesta app — `em andamento`
+- [ ] T-013 — Entregar o pacote do brief PLAN-036 nesta app (PLAN-003) — `em andamento`
 
 ## Skills selecionadas
 

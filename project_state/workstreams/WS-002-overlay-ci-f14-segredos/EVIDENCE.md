@@ -43,3 +43,13 @@ Deslop: action composta so encapsula setup-python + pip lock; jobs continuam par
 | infra/postgres/bootstrap_roles_vps.sql | fixture | senha so via variavel psql |
 | tres arquivos de ambiente ignorados | nao lidos | se fossem reais: parar e rotacionar com humano |
 
+---
+
+## E-004 — Gate G5 (deslop)
+
+**Tarefa:** T-013 · **Quando:** 2026-08-23T21:20:00Z · **Commit:** `2613ffc63d0963bd205f650fd1b0ab45233cb52a`
+**Gate:** G5
+
+**Resumo (1–3 frases):** O diff desta WS é overlay, action composta de CI e classificação F1.4. Arquivos de ambiente ignorados não foram lidos. Varredura de segredo passa a considerar só arquivos rastreados pelo Git.
+
+

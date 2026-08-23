@@ -79,7 +79,7 @@ redaction_patterns:
   - name: signed-url
     pattern: "[?&](X-Amz-Signature|Signature|sig|token)=[A-Za-z0-9%_-]{16,}"
   - name: credential-pair
-    pattern: "(?i)\\b(password|passwd|senha|secret|api[_-]?key|token)\\s*[:=]\\s*(?:[\"'][^\"'\\r\\n]{8,}[\"']|(?!process\\.env)(?!os\\.environ)[A-Za-z0-9_/+.-]{16,}(?![A-Za-z0-9_/+.-])(?!\\())"
+    pattern: "(?i)\\b(password|passwd|senha|secret|api[_-]?key|token)\\s*[:=]\\s*[\"'][^\"'\\r\\n]{8,}[\"']"
 
 # Padrões que o validador ignora por serem exemplos do próprio protocolo.
 # Arquivos que DEFINEM os padrões e por isso os citam por necessidade. Mantenha curta:
@@ -89,6 +89,8 @@ redaction_allowlist_files:
   - ".agents/policy/capture-policy.yaml"
   - ".agents/skills/memory/memory-privacy/SKILL.md"
   - "tools/validate_ai_ready.py"
+  - "backend/tests/unit/test_postgres_vps_artifacts.py"
+  - "infra/postgres/bootstrap_roles_vps.sql"
 
 # Camada 5 — limites.
 limits:

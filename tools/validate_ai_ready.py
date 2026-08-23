@@ -225,9 +225,14 @@ def run(root: Path) -> Report:
 
     # --- Segredos
     # Mesma fronteira do resto dos validadores: projeto vizinho tem o proprio gate.
+    # Arquivo ignorado pelo Git (.env local) nao entra no contexto: a politica de
+    # captura proibe ler esses caminhos; varrer a working tree os traria.
+    tracked_secrets = {str(p).replace("\\", "/") for p in _git_tracked(root)}
     scan = walk_files(root, set(), scope)
     for f in scan:
         p = rel(f, root)
+        if tracked_secrets and p not in tracked_secrets:
+            continue
         if p in secret_allowlist or not _is_text(f):
             continue
         content = read(f)
