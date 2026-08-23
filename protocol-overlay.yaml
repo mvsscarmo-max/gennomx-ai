@@ -1,0 +1,39 @@
+{
+  "schema": "protocol-overlay",
+  "version": 1,
+  "id": "gennomx-ai",
+  "core_version": "1.1.0",
+  "vlaeg_edition": "4.0",
+  "fields": [
+    {
+      "name": "stack",
+      "reason": "FastAPI backend plus Next.js frontend, not the public static site.",
+      "value": "python-fastapi-next"
+    },
+    {
+      "name": "extra_templates",
+      "reason": "Sisters keep TASK.md and KNOWLEDGE.md from the 4.0 kit.",
+      "value": [
+        "TASK.md",
+        "KNOWLEDGE.md"
+      ]
+    },
+    {
+      "name": "extra_policies",
+      "reason": "Local validator-scope.yaml is extra to capture and budget policies.",
+      "value": [
+        "validator-scope.yaml"
+      ]
+    },
+    {
+      "name": "extra_validation_commands",
+      "reason": "PROJECT.md lists pytest and frontend lint/typecheck/build besides protocol validate.",
+      "value": [
+        "pytest_unit",
+        "frontend_lint",
+        "frontend_typecheck",
+        "frontend_build"
+      ]
+    }
+  ]
+}

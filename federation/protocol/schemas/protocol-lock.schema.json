@@ -3,7 +3,7 @@
   "$id": "https://vlaeg.local/federation/protocol/schemas/protocol-lock.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["$schema", "$id", "protocolVersion", "sourceCommit", "bundleDigest", "source", "overlay", "patches", "managedFiles", "fileDigests"],
+  "required": ["$schema", "$id", "protocolVersion", "sourceCommit", "bundleDigest", "source", "overlay", "patches", "managedFiles", "fileDigests", "semanticOverlaySchema", "semanticCore"],
   "properties": {
     "$schema": {"type": "string", "format": "uri"},
     "$id": {"const": "https://vlaeg.local/federation/protocol/lock"},
@@ -17,6 +17,8 @@
     "fileDigests": {
       "type": "object",
       "additionalProperties": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"}
-    }
+    },
+    "semanticOverlaySchema": {"const": "schemas/semantic-overlay.schema.json"},
+    "semanticCore": {"const": "core/parity.py"}
   }
 }

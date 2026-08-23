@@ -244,7 +244,7 @@ def verify_bundle(root: Path = PROTOCOL_ROOT) -> dict[str, Any]:
 def _validate_lock(lock: dict[str, Any]) -> None:
     required = {
         "$schema", "$id", "protocolVersion", "sourceCommit", "bundleDigest", "source", "overlay", "patches",
-        "managedFiles", "fileDigests",
+        "managedFiles", "fileDigests", "semanticOverlaySchema", "semanticCore",
     }
     if set(lock) != required:
         raise ProtocolError("invalid-lock", "Lock fields differ from the protocol lock schema")
@@ -260,6 +260,10 @@ def _validate_lock(lock: dict[str, Any]) -> None:
         raise ProtocolError("invalid-lock", "Lock source or overlay is not canonical")
     if lock["patches"] != []:
         raise ProtocolError("invalid-lock", "Only the empty patch list is supported by the base bundle")
+    if lock["semanticOverlaySchema"] != "schemas/semantic-overlay.schema.json":
+        raise ProtocolError("invalid-lock", "Lock semanticOverlaySchema must be the bundled schema")
+    if lock["semanticCore"] != "core/parity.py":
+        raise ProtocolError("invalid-lock", "Lock semanticCore must be the bundled parity module")
     files = lock["managedFiles"]
     if not isinstance(files, list) or files != sorted(files) or not all(isinstance(item, str) for item in files):
         raise ProtocolError("invalid-lock", "Lock managedFiles must be a sorted string list")
@@ -321,6 +325,8 @@ def _lock_for_source(
         "patches": [],
         "managedFiles": managed,
         "fileDigests": digests,
+        "semanticOverlaySchema": "schemas/semantic-overlay.schema.json",
+        "semanticCore": "core/parity.py",
     }
 
 

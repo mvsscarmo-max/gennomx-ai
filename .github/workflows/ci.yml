@@ -38,14 +38,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install -r requirements.lock && pip install --no-deps -e .
+      - uses: ./.github/actions/setup-python-backend
 
       - name: Ruff lint
         run: ruff check .
@@ -65,14 +58,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install -r requirements.lock && pip install --no-deps -e .
+      - uses: ./.github/actions/setup-python-backend
 
       - name: Run unit tests
         run: pytest tests/unit/ -v --tb=short -q
@@ -125,14 +111,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install -r requirements.lock && pip install --no-deps -e .
+      - uses: ./.github/actions/setup-python-backend
 
       - name: Run Alembic migrations
         run: python -m alembic -c migrations/alembic.ini upgrade head
@@ -231,6 +210,16 @@ jobs:
       - name: Run dashboard E2E
         run: npm run test:e2e
 
+  protocol:
+    name: Protocol overlay
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - run: python tools/validate.py --only protocol
+
   # ── Security scan ───────────────────────────────────────────────────────────
   security:
     name: Security Scan
@@ -241,14 +230,7 @@ jobs:
         working-directory: backend
     steps:
       - uses: actions/checkout@v4
-
-      - uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: pip
-
-      - name: Install dependencies
-        run: pip install -r requirements.lock && pip install --no-deps -e .
+      - uses: ./.github/actions/setup-python-backend
 
       - name: pip-audit (dependency vulnerabilities)
         run: pip-audit -r requirements.lock

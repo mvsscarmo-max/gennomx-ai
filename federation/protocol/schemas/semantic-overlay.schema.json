@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://vlaeg.local/federation/protocol/schemas/semantic-overlay.schema.json",
+  "title": "VLAEG semantic protocol overlay (bundle 1.1.0)",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "version", "id", "core_version", "vlaeg_edition", "fields"],
+  "properties": {
+    "schema": {"const": "protocol-overlay"},
+    "version": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9-]+$"},
+    "core_version": {"type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"},
+    "vlaeg_edition": {"const": "4.0"},
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "reason", "value"],
+        "properties": {
+          "name": {
+            "enum": [
+              "stack",
+              "local_commands",
+              "agents_local",
+              "project_local",
+              "extra_skills",
+              "extra_templates",
+              "extra_validation_commands",
+              "extra_event_types",
+              "extra_policies"
+            ]
+          },
+          "reason": {"type": "string", "minLength": 8},
+          "value": {
+            "type": ["string", "array", "object"],
+            "minLength": 1
+          }
+        }
+      }
+    }
+  }
+}

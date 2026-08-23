@@ -1,0 +1,20 @@
+name: "Setup Python backend"
+description: "Python 3.12 with pip cache and lockfile install"
+
+inputs:
+  working-directory:
+    description: "Backend directory"
+    default: backend
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: pip
+        cache-dependency-path: ${{ inputs.working-directory }}/requirements.lock
+    - name: Install lockfile
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      run: pip install -r requirements.lock && pip install --no-deps -e .

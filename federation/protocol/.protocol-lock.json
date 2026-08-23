@@ -1,34 +1,40 @@
 {
   "$id": "https://vlaeg.local/federation/protocol/lock",
   "$schema": "https://vlaeg.local/federation/protocol/schemas/protocol-lock.schema.json",
-  "bundleDigest": "sha256:5703c899a6dac0f44dedf69b29558f58a63eceacf0e2ac0b45c1fa02cff95898",
+  "bundleDigest": "sha256:15f88dd59e9322a6a95a8ebee6ef81a14898bb917027a105fd0ee71f2c0c8b76",
   "fileDigests": {
-    "README.md": "sha256:662dd3ba32b98726fa88355ecc3d546203855c9b86cb2efe6e657fbb43579d95",
-    "VERSION": "sha256:59854984853104df5c353e2f681a15fc7924742f9a2e468c29af248dce45ce03",
+    "README.md": "sha256:ce2349b6e7153b885aa2aa7c80206cc129da545ec8ac8923d64eecb8236ccbef",
+    "VERSION": "sha256:1575e1af4a95f12f70b4ee6a6adce8160953d93ea17dc2611b90883ccc3ad3b8",
     "core/__init__.py": "sha256:f3df0d9c728d88eb326ee443b8749903024ffa4d4b0faf567c425893a96ec80d",
-    "core/protocol.py": "sha256:90a9fed238f0e84f967742be79ababaed8fc806138f0c13f707b61f63c4514e5",
-    "manifest.json": "sha256:6f57b9d6abfb52d61c59c70ebaf902b04b398d2977f5ddf2375b560a40cd7bff",
+    "core/parity.py": "sha256:5f58ff411a2ed8d7a26e7a302c3a43e34ed2cef9578365c9806dda0c89ae1ede",
+    "core/protocol.py": "sha256:997649f869df5046b6aab0a1fe0a872abfb0c6f9ca2a789eebe64c7a78185468",
+    "manifest.json": "sha256:e09aff5f9c118f02c98cc1938bc74b80d40b7c412f37ef077f498af07a877674",
     "overlays/base.json": "sha256:a6a751704bd0c4579b3ad232377c2a9897963dc6b3e5f594b91bb0993a33cc2a",
-    "schemas/protocol-lock.schema.json": "sha256:189f7d3a662089f63e8443c2da62015bc5cdcfbe1a2e062b3f4398b837b0f0be",
+    "schemas/protocol-lock.schema.json": "sha256:9230ab4b5d7c1761069715c02481371432e4a9f0b9e1f78dc7b9507a124380b7",
     "schemas/protocol-manifest.schema.json": "sha256:3c9bfe84bed8bc1b4bd19e36c23c366399f703a9200b66610a38bef88dedfae2",
     "schemas/protocol-overlay.schema.json": "sha256:1fdd50800c2fec2dac037c7634ab907dd5181c5c6fcdbcbef787f7c96e0c9977",
-    "templates/protocol.lock.json": "sha256:1187a3ea277cf30b56d72267736270df3639125f6f28da633373ad189627bde3"
+    "schemas/semantic-overlay.schema.json": "sha256:bcdf8dee8af012b071703f899eb52fd09c2b2e57570c8d9e7d9cc98535d415fe",
+    "templates/protocol.lock.json": "sha256:77d81fa98880e10ff1525063ba88f68534e10c131754f6c86fad56b865f081b8"
   },
   "managedFiles": [
     "README.md",
     "VERSION",
     "core/__init__.py",
+    "core/parity.py",
     "core/protocol.py",
     "manifest.json",
     "overlays/base.json",
     "schemas/protocol-lock.schema.json",
     "schemas/protocol-manifest.schema.json",
     "schemas/protocol-overlay.schema.json",
+    "schemas/semantic-overlay.schema.json",
     "templates/protocol.lock.json"
   ],
   "overlay": "base",
   "patches": [],
-  "protocolVersion": "1.0.0",
+  "protocolVersion": "1.1.0",
+  "semanticCore": "core/parity.py",
+  "semanticOverlaySchema": "schemas/semantic-overlay.schema.json",
   "source": "federation/protocol",
-  "sourceCommit": "d2cd2941686748dc1752e6bdabd70bfdb4c73e64"
+  "sourceCommit": "966f159683f4586f0b937d45f694dac5983fdd73"
 }

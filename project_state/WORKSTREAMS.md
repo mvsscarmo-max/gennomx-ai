@@ -3,11 +3,13 @@
 Índice das linhas de trabalho. Detalhe vive em `workstreams/<WS>/STATE.md` — este arquivo é o
 ponteiro, **não o conteúdo**.
 
-**Próximo ID:** WS-002 · IDs nunca são reutilizados, nem os de workstreams canceladas.
+**Próximo ID:** WS-003 · IDs nunca são reutilizados, nem os de workstreams canceladas.
 
 ## Ativas
 
-_nenhuma_
+| ID | Título | Objetivo | Risco | Fase | Atualizada | Executor |
+|---|---|---|---|---|---|---|
+| [WS-002](workstreams/WS-002-overlay-ci-f14-segredos/STATE.md) | Overlay 1.1.0, CI e classificacao F1.4 | A GennomX AI tem overlay 1.1.0 com lock sourceCommit, CI ampla com action composta de install/cache sem perder paralelismo, e alertas F1.4 classificados sem ler arquivos de ambiente ignorados. | 3 | A | 2026-08-23 | cursor-grok-4.6 |
 
 ## Propostas
 

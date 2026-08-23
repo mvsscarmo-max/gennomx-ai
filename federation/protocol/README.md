@@ -21,6 +21,9 @@ The bundle is verified without network access. Consumers must keep a generated
 target, so a failed copy does not leave a partially updated installation. Sensitive paths declared
 by the manifest are rejected during verification.
 
+`core/parity.py` and `schemas/semantic-overlay.schema.json` ship the portable overlay/parity
+subset (1.1.0). Quality-gates and cycle-review stay out of this bundle.
+
 The source path in a lock is the canonical relative path `federation/protocol`, never an absolute
 machine path. Commands, deployment configuration, secrets and application-specific names are not
 part of this distribution.

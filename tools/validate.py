@@ -31,6 +31,7 @@ import validate_coordination  # noqa: E402
 import validate_links  # noqa: E402
 import validate_skills  # noqa: E402
 import validate_state  # noqa: E402
+import validate_protocol  # noqa: E402
 import verify  # noqa: E402
 
 MODULES = {
@@ -40,6 +41,7 @@ MODULES = {
     "state": validate_state,
     "links": validate_links,
     "g13": verify,
+    "protocol": validate_protocol,
 }
 
 

@@ -1,12 +1,14 @@
 {
   "$schema": "https://vlaeg.local/federation/protocol/schemas/protocol-lock.schema.json",
   "$id": "https://vlaeg.local/federation/protocol/lock",
-  "protocolVersion": "1.0.0",
+  "protocolVersion": "1.1.0",
   "sourceCommit": "0000000000000000000000000000000000000000",
   "bundleDigest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
   "source": "federation/protocol",
   "overlay": "base",
   "patches": [],
   "managedFiles": [],
-  "fileDigests": {}
+  "fileDigests": {},
+  "semanticOverlaySchema": "schemas/semantic-overlay.schema.json",
+  "semanticCore": "core/parity.py"
 }
