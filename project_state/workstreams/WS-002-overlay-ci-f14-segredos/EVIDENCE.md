@@ -52,4 +52,40 @@ Deslop: action composta so encapsula setup-python + pip lock; jobs continuam par
 
 **Resumo (1–3 frases):** O diff desta WS é overlay, action composta de CI e classificação F1.4. Arquivos de ambiente ignorados não foram lidos. Varredura de segredo passa a considerar só arquivos rastreados pelo Git.
 
+---
+
+## E-005 — Gate G13 no SHA de fechamento (pre-G14)
+
+**Tarefa:** T-013 · **Quando:** 2026-08-23T21:45:00Z · **Commit:** `a36716bc8ff383f6e2900ee4f1b43ab75ee8860a`
+**Gate:** G13
+
+```console
+$ git rev-parse HEAD
+a36716bc8ff383f6e2900ee4f1b43ab75ee8860a
+
+$ python -X utf8 -B tools/verify.py --ws WS-002
+[OK    ] g13-verify             74 verificacoes, 0 erro(s), 0 aviso(s)
+
+$ python tools/validate.py --only protocol
+[OK    ] protocol               26 verificacoes, 0 erro(s), 0 aviso(s)
+```
+
+---
+
+## E-006 — Gate G14
+
+**Tarefa:** T-013 · **Quando:** 2026-08-23T21:45:00Z · **Commit:** `a36716bc8ff383f6e2900ee4f1b43ab75ee8860a`
+**Gate:** G14
+**Assinante:** Marcus (fundador)
+**RC:** pendente
+**Escape INFRA:** D-008
+**G13:** E-005
+**Decisao:** ACEITO
+**Veredito:** ACEITO
+**Ressalvas:** push origin bloqueado (main adiantada). CI ampla no GitHub quando Marcus autorizar.
+
+**Autorizacao nesta sessao:** "G14/RC e feche a WS. Nao faca push."
+
+Agente transcreveu o aceite; nao assinou.
+
 

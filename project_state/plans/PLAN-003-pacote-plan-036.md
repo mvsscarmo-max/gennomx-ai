@@ -1,6 +1,6 @@
 # PLAN-003 — Overlay 1.1.0, CI e classificacao F1.4
 
-**Status:** em execução
+**Status:** concluído
 Workstream: WS-002
 Risco: 3
 Origem: briefs da raiz PLAN-036 / PLAN-027 (criterios, nao codigo).

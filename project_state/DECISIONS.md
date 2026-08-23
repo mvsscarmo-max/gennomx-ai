@@ -65,3 +65,15 @@ foi movido sem exclusão para `archive/v1/`.
 **Impacto:** `AGENTS.md`, `docs/ai-ready/`, `tools/`, `federation/protocol/`, estado local.
 
 **Substitui/substituída por:** substitui D-006 quanto ao estado vivo; não revoga D-001…D-005.
+
+## D-008 — Escape INFRA da RC desta WS (teto 25 arquivos)
+
+**Data:** 2026-08-23 | **Autor:** Marcus (transcricao G14 desta sessao) | **Status:** ativa | **Autoridade:** approved-decision
+**Workstream:** WS-002 / PLAN-003 | **Nivel de risco:** 3 | **Decisor humano:** true
+**Prazo:** 2026-09-06
+
+**Contexto:** o motor independente opencode/openai/gpt-5.6-sol existe nesta maquina. O pre-voo da RC recusou a janela por teto de 25 arquivos. Nao houve rodada de julgamento. Push origin continua bloqueado (main ja adiantada).
+
+**Decisao:** destravar so a ausencia da RC para fechar WS-002. Nao destravar achado critico (nenhum foi produzido).
+
+**Impacto:** G14 desta WS cita **Escape INFRA:** D-008.

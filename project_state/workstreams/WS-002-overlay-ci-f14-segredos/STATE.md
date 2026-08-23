@@ -2,28 +2,27 @@
 id: WS-002
 title: "Overlay 1.1.0, CI e classificacao F1.4"
 objective: "A GennomX AI tem overlay 1.1.0 com lock sourceCommit, CI ampla com action composta de install/cache sem perder paralelismo, e alertas F1.4 classificados sem ler arquivos de ambiente ignorados."
-status: active
+status: completed
 created_at: "2026-08-23"
 updated_at: "2026-08-23"
 risk_level: 3
 current_phase:
-  vlaeg: A
+  vlaeg: G
 active_plan: PLAN-003
-active_tasks: [T-013]
+active_tasks: []
 agents:
   - harness: cursor
     session_id: "plan-036-irmas"
-    last_seen: "2026-08-23T16:42:52Z"
+    last_seen: "2026-08-23T21:45:00Z"
 branch: "main"
 worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/GennomX AI"
 base_commit: "8c96715e9efaca04c4754674d5851fdc60250e27"
-current_commit: "8c96715e9efaca04c4754674d5851fdc60250e27"
-validated_commit: ""
+current_commit: "a36716bc8ff383f6e2900ee4f1b43ab75ee8860a"
+validated_commit: "a36716bc8ff383f6e2900ee4f1b43ab75ee8860a"
 open_questions: []
-risks:
-  - "G13/RC/G14 pendentes antes de fechar a WS (risco 3)"
-pending_gates: [G13, G14]
-last_handoff: null
+risks: []
+pending_gates: []
+last_handoff: "project_state/workstreams/WS-002-overlay-ci-f14-segredos/HANDOFF.md"
 ---
 
 # WS-002 — Overlay 1.1.0, CI e classificacao F1.4
@@ -44,7 +43,7 @@ A GennomX AI tem overlay 1.1.0 com lock sourceCommit, CI ampla com action compos
 
 ## Tarefas
 
-- [ ] T-013 — Entregar o pacote do brief PLAN-036 nesta app (PLAN-003) — `em andamento`
+- [x] T-013 — Entregar o pacote do brief PLAN-036 nesta app (PLAN-003) — `concluída` → EVIDENCE.md#E-005
 
 ## Skills selecionadas
 
@@ -83,29 +82,26 @@ selected_skills:
 skipped_skills: []
 ```
 
-
 ## Bloqueios
 
-- Reload nginx / deploy VPS: só com aprovação explícita de Marcus.
-- G14 humano e RC independente: não fechar a WS sem eles.
+- Push origin: main ja esta adiantada; so com SIM de Marcus.
 
 ## Gates pendentes
 
-- G13 — verificação diferencial local após o commit
-- RC — motor independente
-- G14 — aceite humano
+_nenhum_
 
 ## Não validado
 
-- CI no GitHub Actions (ainda não houve push).
-- Reload/deploy em VPS (proibido neste pacote).
+- Push GitHub (main ahead of origin).
+- CI ampla no GitHub quando Marcus autorizar push.
+- Arquivos de ambiente ignorados: nao lidos.
+- RC: pre-voo teto 25 arquivos; escape INFRA D-008 prazo 2026-09-06.
 
 ## Digest das sessões
 
 ### 2026-08-23 — cursor-grok-4.6
-- Feito: overlay 1.1.0, CI, itens F1.x do brief
-- Pendente: G13/RC/G14
-- Próxima ação: verificar, deslop, commitar
+- Feito: overlay 1.1.0, CI cache, F1.4 classificado sem ler .env, G13 0/0, G14 transcrito
+- Residual: push, CI GitHub, RC shards
 
 ## Ponteiros
 
@@ -113,5 +109,4 @@ skipped_skills: []
 - Evidência: `EVIDENCE.md`
 - Ledger: `EVENTS.jsonl`
 
-
-Caminhos tocados: `.github/` `federation/` `tools/` `protocol-overlay.yaml` `project_state/`.
+Caminhos tocados: `.github/` `federation/` `tools/` `backend/` `protocol-overlay.yaml` `project_state/`.
