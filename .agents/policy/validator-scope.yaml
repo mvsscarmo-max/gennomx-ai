@@ -2,6 +2,8 @@
 version: 1.0.0
 
 core_paths:
+  - ".github"
+  - "protocol-overlay.yaml"
   - ".agents"
   - "docs"
   - "tools"

@@ -15,3 +15,12 @@ DNS, deploy, publicacao, cutover WS-003 da raiz, W10, FlowTune, header/footer HT
 ## Aceite
 
 Overlay 1.1.0 + lock sourceCommit; CI do brief no git desta app; F1.x feito ou finding local; STATE/EVIDENCE/EVENTS desta WS. Fechamento exige G13 + RC + G14.
+
+## Escopo
+
+`.github/` `federation/` `tools/` `project_state/` `protocol-overlay.yaml` `scripts/` `nginx/` `src/` `backend/` `frontend/` `docs/` `.agents/` `package.json` `Dockerfile.site` `.gitignore`
+
+## Critérios de validação
+
+comando: `python tools/validate.py --only protocol`
+comando: `python tools/test_validate_protocol.py`

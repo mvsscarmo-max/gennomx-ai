@@ -112,3 +112,6 @@ skipped_skills: []
 - Plano: `project_state/plans/PLAN-003-pacote-plan-036.md`
 - Evidência: `EVIDENCE.md`
 - Ledger: `EVENTS.jsonl`
+
+
+Caminhos tocados: `.github/` `federation/` `tools/` `protocol-overlay.yaml` `project_state/`.

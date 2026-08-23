@@ -5,9 +5,9 @@ Usa só a cópia instalada em federation/protocol/. Não importa tools da raiz.
 from __future__ import annotations
 
 import hashlib
+import importlib.util
 import json
 import re
-import sys
 from pathlib import Path
 
 from _common import Report
@@ -33,14 +33,13 @@ def _file_digest(path: Path) -> str:
 
 
 def _import_parity(root: Path):
-    core_dir = str(root / PROTOCOL_DIR / "core")
-    sys.path.insert(0, core_dir)
-    try:
-        import parity  # type: ignore
-    finally:
-        if core_dir in sys.path:
-            sys.path.remove(core_dir)
-    return parity
+    path = root / PROTOCOL_DIR / "core" / "parity.py"
+    spec = importlib.util.spec_from_file_location("protocol_parity", path)
+    if spec is None or spec.loader is None:
+        raise ImportError(f"cannot load {path}")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def run(root: Path) -> Report:
