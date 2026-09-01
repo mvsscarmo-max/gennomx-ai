@@ -3,11 +3,13 @@
 Índice das linhas de trabalho. Detalhe vive em `workstreams/<WS>/STATE.md` — este arquivo é o
 ponteiro, **não o conteúdo**.
 
-**Próximo ID:** WS-003 · IDs nunca são reutilizados, nem os de workstreams canceladas.
+**Próximo ID:** WS-004 · IDs nunca são reutilizados, nem os de workstreams canceladas.
 
 ## Ativas
 
-_nenhuma_
+| ID | Título | Objetivo | Risco | Fase | Atualizada | Executor |
+|---|---|---|---|---|---|---|
+| [WS-003](workstreams/WS-003-onda2-ci-pip-audit/STATE.md) | Onda 2: CI verde apos pip-audit | O origin/main tem Security Scan verde com aiohttp e cryptography acima das CVEs do run 32669664058 | 3 | G | 2026-09-01 | cursor-grok-4.6 |
 
 ## Propostas
 
