@@ -9,16 +9,16 @@ risk_level: 3
 current_phase:
   vlaeg: G
 active_plan: PLAN-004
-active_tasks: [T-015, T-016]
+active_tasks: [T-016]
 agents:
   - id: cursor-grok-4.6
     harness: cursor
     session_id: "onda2-ci-2b"
-    last_seen: "2026-09-02T02:30:00Z"
+    last_seen: "2026-09-02T02:42:00Z"
 branch: "main"
 worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/GennomX AI"
 base_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
-current_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
+current_commit: "ac74e3e028727d0288922b66cb5f91fd8960b5d8"
 validated_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
 open_questions: []
 risks:
@@ -46,8 +46,8 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 ## Tarefas
 
 - [x] T-014 — Pinos aiohttp/cryptography, push e CI (PLAN-004) — `concluída` → EVIDENCE.md#E-001
-- [ ] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `em andamento`
-- [ ] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `em andamento`
+- [x] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `concluída` → run 33583382886 Protocol overlay success
+- [ ] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `em andamento` → EVIDENCE.md#E-003
 
 ## Skills selecionadas
 
@@ -55,8 +55,13 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 selected_skills:
   - name: no-workarounds
     version: 1.0.0
-    reason: causa raiz e o pino velho, nao silenciar pip-audit
+    reason: causa raiz do npm ci e do mypy aclose, nao silenciar jobs
     trigger: corrigir codigo
+    mandatory: true
+  - name: deslop
+    version: 1.0.0
+    reason: commit de T-016
+    trigger: commitar
     mandatory: true
   - name: memory-privacy
     version: 1.0.0
@@ -88,14 +93,15 @@ _nenhum_
 
 ## Não validado
 
-- Run GitHub do SHA desta fatia (protocol, frontend-lint, backend-lint) ainda não rodou.
+- Frontend lint e backend lint no GitHub após este SHA (run `33583382886` falhou nesses dois; protocol e Security Scan já verdes).
+- G13 / RC / G14.
 
 ## Digest
 
 ### 2026-09-02 — cursor-grok-4.6
-- Feito: lock `fileDigests` alinhado aos blobs LF; `.gitattributes` `federation/protocol/** eol=lf`; mypy `python_version=3.12`; npm audit 0 (next 15.5.25, overrides).
-- Pendente: commit/push; CI Linux; G13/RC/G14. F-069 da raiz permanece aberto.
-- Proxima acao: push e conferir jobs protocol / lint.
+- Feito: T-015 verde no Linux (Protocol overlay). T-016 local: override `browserslist@4.28.7` removido e lock com a árvore real; `types-redis` 4 removido para o `py.typed` do redis 6. mypy 138/0; `npx npm@10.8.2 ci` 0; audit 0.
+- Pendente: push; jobs lint no GitHub; G13/RC/G14. F-069 da raiz permanece aberto.
+- Proxima acao: push e conferir frontend-lint e backend-lint.
 
 ### 2026-09-01 — cursor-grok-4.6
 - Feito: piso aiohttp 3.14.3 e cryptography 50.0.1.

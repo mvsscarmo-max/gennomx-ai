@@ -42,3 +42,32 @@ Causa do `protocol::managed-drift` no Linux: `fileDigests` de `parity.py`, `mani
 `[tool.mypy] python_version` 3.12 (CI e stubs numpy 2.5.1). `npm audit --audit-level=moderate`: 0. `npm run typecheck`: exit 0.
 
 F-069 da raiz permanece aberto.
+
+---
+
+## E-003 — npm ci npm 10 e mypy aclose
+
+**Tarefa:** T-016 · **Quando:** 2026-09-02T02:42:00Z · **Commit:** working tree sobre `ac74e3e`
+**Gate:** G2
+
+Run `33583382886` (SHA `ac74e3e`): Protocol overlay success; Security Scan success; Frontend lint failed `npm ci` (override `browserslist@4.28.7` ausente do lock); Backend lint failed mypy `"Redis[str]" has no attribute "aclose"` com `types-redis==4.6.0.20241004`.
+
+Correção: remover o override que o lock nunca materializou; gravar browserslist 4.28.8 e transientes no lock; remover `types-redis` para o pacote `redis` 6.4.0 (`py.typed`, `aclose` presente) prevalecer.
+
+```console
+npx --yes npm@10.8.2 ci
+added 399 packages, and audited 400 packages in 1m
+found 0 vulnerabilities
+exit 0
+
+npm audit --audit-level=moderate
+found 0 vulnerabilities
+
+npm run typecheck
+exit 0
+
+python -m mypy app workers --ignore-missing-imports
+Success: no issues found in 138 source files
+```
+
+Job protocol não foi alterado. F-069 da raiz permanece aberto.
