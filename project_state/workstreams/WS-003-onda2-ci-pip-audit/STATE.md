@@ -9,17 +9,17 @@ risk_level: 3
 current_phase:
   vlaeg: G
 active_plan: PLAN-004
-active_tasks: [T-016]
+active_tasks: [T-017]
 agents:
   - id: cursor-grok-4.6
     harness: cursor
     session_id: "onda2-ci-2b"
-    last_seen: "2026-09-02T02:42:00Z"
+    last_seen: "2026-09-02T02:46:00Z"
 branch: "main"
 worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/GennomX AI"
 base_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
-current_commit: "ac74e3e028727d0288922b66cb5f91fd8960b5d8"
-validated_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
+current_commit: "8d5a553e9dca6f4e97a6f42da7f8bd14656daab5"
+validated_commit: "8d5a553e9dca6f4e97a6f42da7f8bd14656daab5"
 open_questions: []
 risks:
   - "pip-audit local no Windows falhou por encoding do pip --version; a prova e o run Linux no GitHub"
@@ -46,8 +46,9 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 ## Tarefas
 
 - [x] T-014 — Pinos aiohttp/cryptography, push e CI (PLAN-004) — `concluída` → EVIDENCE.md#E-001
-- [x] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `concluída` → run 33583382886 Protocol overlay success
-- [ ] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `em andamento` → EVIDENCE.md#E-003
+- [x] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `concluída` → EVIDENCE.md#E-002 / run 33583382886
+- [x] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `concluída` → EVIDENCE.md#E-003 / E-004
+- [ ] T-017 — G13 / RC INFRA (D-008) / G14 de fechamento — `em andamento`
 
 ## Skills selecionadas
 
@@ -93,15 +94,14 @@ _nenhum_
 
 ## Não validado
 
-- Frontend lint e backend lint no GitHub após este SHA (run `33583382886` falhou nesses dois; protocol e Security Scan já verdes).
-- G13 / RC / G14.
+- G13 / RC / G14. Escape INFRA D-008 permanece; não há motor Gemini 3.6.
 
 ## Digest
 
 ### 2026-09-02 — cursor-grok-4.6
-- Feito: T-015 verde no Linux (Protocol overlay). T-016 local: override `browserslist@4.28.7` removido e lock com a árvore real; `types-redis` 4 removido para o `py.typed` do redis 6. mypy 138/0; `npx npm@10.8.2 ci` 0; audit 0.
-- Pendente: push; jobs lint no GitHub; G13/RC/G14. F-069 da raiz permanece aberto.
-- Proxima acao: push e conferir frontend-lint e backend-lint.
+- Feito: CI `8d5a553` run 33584290345 **success** (protocol, lint, tests, Security Scan, E2E, integration).
+- Pendente: T-017 G13/RC/G14. WS permanece active. F-069 da raiz permanece aberto.
+- Proxima acao: Revisão de Ciclo no fechamento; não fechar F-069 pela raiz.
 
 ### 2026-09-01 — cursor-grok-4.6
 - Feito: piso aiohttp 3.14.3 e cryptography 50.0.1.

@@ -71,3 +71,16 @@ Success: no issues found in 138 source files
 ```
 
 Job protocol não foi alterado. F-069 da raiz permanece aberto.
+
+---
+
+## E-004 — CI Linux SHA 8d5a553 toda verde
+
+**Tarefa:** T-016 · **Quando:** 2026-09-02T02:46:00Z · **Commit:** `8d5a553e9dca6f4e97a6f42da7f8bd14656daab5`
+**Gate:** G2
+
+Run https://github.com/mvsscarmo-max/gennomx-ai/actions/runs/33584290345 — `conclusion: success`.
+
+Jobs: Protocol overlay, Backend Lint & Type Check, Frontend Lint & Type Check, Backend Unit Tests, Secret Scan, Frontend Build, Frontend E2E, Security Scan, Backend Integration Tests — todos `success`.
+
+F-069 da raiz permanece aberto. WS-003 permanece `active` até T-017 (G13/RC/G14).
