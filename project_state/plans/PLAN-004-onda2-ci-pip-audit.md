@@ -19,7 +19,8 @@ O `main` no origin tem o job Security Scan verde: `pip-audit -r requirements.loc
 | # | Etapa | Vira tarefa |
 |---|---|---|
 | 1 | Subir aiohttp ≥ 3.14.3 e cryptography ≥ 50.0.0 na origem e no lock | T-014 |
-| 2 | Push `main` e conferir o workflow CI | T-014 |
+| 3 | Alinhar lock overlay aos bytes LF do git e fixar eol no checkout | T-015 |
+| 4 | Fechar npm audit high e mypy/numpy no runner 3.12 | T-016 |
 
 ## Critérios de validação
 

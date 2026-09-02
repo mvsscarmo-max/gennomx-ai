@@ -4,17 +4,17 @@ title: "Onda 2: CI verde apos pip-audit"
 objective: "O origin/main tem Security Scan verde com aiohttp e cryptography acima das CVEs do run 32669664058"
 status: active
 created_at: "2026-09-01"
-updated_at: "2026-09-01"
+updated_at: "2026-09-02"
 risk_level: 3
 current_phase:
   vlaeg: G
 active_plan: PLAN-004
-active_tasks: [T-014]
+active_tasks: [T-015, T-016]
 agents:
   - id: cursor-grok-4.6
     harness: cursor
-    session_id: "onda2-local"
-    last_seen: "2026-09-01T06:20:00Z"
+    session_id: "onda2-ci-2b"
+    last_seen: "2026-09-02T02:30:00Z"
 branch: "main"
 worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/GennomX AI"
 base_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
@@ -45,7 +45,9 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 
 ## Tarefas
 
-- [ ] T-014 — Pinos aiohttp/cryptography, push e CI (PLAN-004) — `em andamento`
+- [x] T-014 — Pinos aiohttp/cryptography, push e CI (PLAN-004) — `concluída` → EVIDENCE.md#E-001
+- [ ] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `em andamento`
+- [ ] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `em andamento`
 
 ## Skills selecionadas
 
@@ -86,9 +88,14 @@ _nenhum_
 
 ## Não validado
 
-- Run GitHub do SHA ainda nao empurrado.
+- Run GitHub do SHA desta fatia (protocol, frontend-lint, backend-lint) ainda não rodou.
 
 ## Digest
+
+### 2026-09-02 — cursor-grok-4.6
+- Feito: lock `fileDigests` alinhado aos blobs LF; `.gitattributes` `federation/protocol/** eol=lf`; mypy `python_version=3.12`; npm audit 0 (next 15.5.25, overrides).
+- Pendente: commit/push; CI Linux; G13/RC/G14. F-069 da raiz permanece aberto.
+- Proxima acao: push e conferir jobs protocol / lint.
 
 ### 2026-09-01 — cursor-grok-4.6
 - Feito: piso aiohttp 3.14.3 e cryptography 50.0.1.

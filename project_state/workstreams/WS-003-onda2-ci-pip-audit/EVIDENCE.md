@@ -29,3 +29,16 @@ cryptography 50.0.1
 Lock e origem atualizados para esses pisos. `pip-audit` local falhou com `UnicodeDecodeError` em `pip --version` (caminho com `ç`); não é prova. A prova do gate é o job Linux após o push.
 
 **Conclusão sustentada:** a causa do Security Scan vermelho era o pino; o lock novo declara as versões que o próprio pip-audit pediu. CI GitHub ainda não rodou neste SHA.
+
+---
+
+## E-002 — Lock overlay alinhado a LF; npm audit 0; mypy python_version 3.12
+
+**Tarefa:** T-015 / T-016 · **Quando:** 2026-09-02T02:30:00Z · **Commit:** working tree
+**Gate:** G2
+
+Causa do `protocol::managed-drift` no Linux: `fileDigests` de `parity.py`, `manifest.json` e `semantic-overlay.schema.json` foram calculados no working tree Windows (CRLF). O git guarda LF. `python tools/validate.py --only protocol` após realinhar: 26/0. Hashes do lock casam com `git show HEAD:federation/protocol/...`. `.gitattributes` declara `federation/protocol/** text eol=lf`.
+
+`[tool.mypy] python_version` 3.12 (CI e stubs numpy 2.5.1). `npm audit --audit-level=moderate`: 0. `npm run typecheck`: exit 0.
+
+F-069 da raiz permanece aberto.

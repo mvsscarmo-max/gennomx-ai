@@ -117,7 +117,7 @@ ignore = [
 "migrations/**" = ["E501", "N999"]
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = false
 ignore_missing_imports = true
 plugins = ["pydantic.mypy", "sqlalchemy.ext.mypy.plugin"]
