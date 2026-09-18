@@ -4,7 +4,7 @@ title: "Onda 2: CI verde apos pip-audit"
 objective: "O origin/main tem Security Scan verde com aiohttp e cryptography acima das CVEs do run 32669664058"
 status: active
 created_at: "2026-09-01"
-updated_at: "2026-09-02"
+updated_at: "2026-09-18"
 risk_level: 3
 current_phase:
   vlaeg: G
@@ -13,17 +13,17 @@ active_tasks: [T-017]
 agents:
   - id: cursor-grok-4.6
     harness: cursor
-    session_id: "onda2-ci-2b"
-    last_seen: "2026-09-02T02:46:00Z"
-branch: "main"
-worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/GennomX AI"
+    session_id: "onda2-ci-t017-20260918"
+    last_seen: "2026-09-18T16:28:00Z"
+branch: "ws003-t017-g13"
+worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/.tmp/gx-ai-onda2"
 base_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
-current_commit: "8d5a553e9dca6f4e97a6f42da7f8bd14656daab5"
+current_commit: "2fa5e84b03234d385c48c8f6408350c92ea2f084"
 validated_commit: "8d5a553e9dca6f4e97a6f42da7f8bd14656daab5"
 open_questions: []
 risks:
   - "pip-audit local no Windows falhou por encoding do pip --version; a prova e o run Linux no GitHub"
-pending_gates: [G5, G13, G14]
+pending_gates: [G14]
 last_handoff: null
 ---
 
@@ -48,7 +48,7 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 - [x] T-014 — Pinos aiohttp/cryptography, push e CI (PLAN-004) — `concluída` → EVIDENCE.md#E-001
 - [x] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `concluída` → EVIDENCE.md#E-002 / run 33583382886
 - [x] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `concluída` → EVIDENCE.md#E-003 / E-004
-- [ ] T-017 — G13 / RC INFRA (D-008) / G14 de fechamento — `em andamento`
+- [ ] T-017 — G13 / RC INFRA (D-008) / G14 de fechamento — `em andamento` → EVIDENCE.md#E-005 / E-006
 
 ## Skills selecionadas
 
@@ -59,10 +59,10 @@ selected_skills:
     reason: causa raiz do npm ci e do mypy aclose, nao silenciar jobs
     trigger: corrigir codigo
     mandatory: true
-  - name: deslop
+  - name: cycle-review
     version: 1.0.0
-    reason: commit de T-016
-    trigger: commitar
+    reason: risco 3, T-017 fechamento; G13 verde
+    trigger: Revisão de Ciclo
     mandatory: true
   - name: memory-privacy
     version: 1.0.0
@@ -72,12 +72,15 @@ selected_skills:
   - name: workstream-management
     version: 1.1.0
     reason: linha local da Onda 2
-    trigger: nova workstream
+    trigger: retomar workstream
     mandatory: true
 skipped_skills:
-  - name: cycle-review
-    reason: RC no fechamento; D-008 cobre motor ausente desta fatia de CI
-    approved_by: protocolo (gate de fechamento)
+  - name: deslop
+    reason: diff de plano e evidência, sem codigo de produto
+    approved_by: agente
+  - name: qa-execution
+    reason: sem superficie de produto nova
+    approved_by: agente
 ```
 
 ## Bloqueios
@@ -90,13 +93,21 @@ _nenhum_
 
 ## Gates pendentes
 
-- G5 / G13 / G14 — fechamento
+- G14 — aceite humano. G13 verde em E-006 (aviso dirty até commit). RC ainda não rodou.
 
 ## Não validado
 
-- G13 / RC / G14. Escape INFRA D-008 permanece; não há motor Gemini 3.6.
+- RC. G14. Commit do tip. D-008 era escape da WS-002 (prazo 2026-09-06), não desta.
 
 ## Digest
+
+### 2026-09-18 — cursor-grok-4.6
+- Feito: G13 verde (E-006, 33/0). Escopo PLAN-004. Envelopes E-001…E-004 reais.
+- Pendente: commit do tip; RC; G14. Sem dirt R2.
+- Proxima acao: RC independente; agente nao assina G14.
+
+### 2026-09-18 — cursor-grok-4.6
+- Feito: worktree limpo `2fa5e84` (sem dirt R2). G13 12 erros (E-005).
 
 ### 2026-09-02 — cursor-grok-4.6
 - Feito: CI `8d5a553` run 33584290345 **success** (protocol, lint, tests, Security Scan, E2E, integration).
