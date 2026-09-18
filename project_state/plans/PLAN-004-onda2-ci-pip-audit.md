@@ -4,7 +4,7 @@
 **Criado em:** 2026-09-01 · **Autor:** agente, SIM do fundador (Onda 2)
 **Aprovado por:** Marcus em 2026-09-01
 **Workstream:** WS-003 · **Nível de risco:** 3
-**Decisões relacionadas:** D-008 · **Findings relacionados:** nenhum local
+**Decisões relacionadas:** D-008 · **Findings relacionados:** F-007 · F-008
 
 ## Objetivo
 
@@ -12,7 +12,7 @@ O `main` no origin tem o job Security Scan verde: `pip-audit -r requirements.loc
 
 ## Escopo
 
-- **Incluído:** piso em `backend/pyproject.toml` e `backend/_lock_requirements.in`; pinos em `backend/requirements.lock`; lock overlay `federation/protocol/.protocol-lock.json`; eol em `.gitattributes`; `frontend/package.json` e `frontend/package-lock.json`; índice `project_state/WORKSTREAMS.md`; `audits/AUD-002-onda2-ci-pip-audit.md`; `project_state/AUDITS.md`; `project_state/FINDINGS.md`; push; conferência do run GitHub; G13/RC/G14 (T-017).
+- **Incluído:** piso em `backend/pyproject.toml` e `backend/_lock_requirements.in`; pinos em `backend/requirements.lock`; lock overlay `federation/protocol/.protocol-lock.json`; eol em `.gitattributes`; `frontend/package.json` e `frontend/package-lock.json`; índice `project_state/WORKSTREAMS.md`; `audits/AUD-002-onda2-ci-pip-audit.md`; `project_state/AUDITS.md`; `project_state/findings.md`; push; conferência do run GitHub; G13/RC/G14 (T-017).
 - **Fora de escopo:** deploy VPS da GennomX AI; ingestão real; ficheiros R2 sujos do checkout paralelo.
 
 ## Etapas
