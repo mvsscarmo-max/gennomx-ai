@@ -7,9 +7,7 @@ ponteiro, **não o conteúdo**.
 
 ## Ativas
 
-| ID | Título | Objetivo | Risco | Fase | Atualizada | Executor |
-|---|---|---|---|---|---|---|
-| [WS-003](workstreams/WS-003-onda2-ci-pip-audit/STATE.md) | Onda 2: CI verde apos pip-audit | O origin/main tem Security Scan verde com aiohttp e cryptography acima das CVEs do run 32669664058 | 3 | G | 2026-09-18 | cursor-grok-4.6 |
+_nenhuma_
 
 ## Propostas
 
@@ -27,6 +25,7 @@ _nenhuma_
 
 | ID | Título | Objetivo | Risco | Fase | Atualizada | Executor |
 |---|---|---|---|---|---|---|
+| [WS-003](workstreams/WS-003-onda2-ci-pip-audit/STATE.md) | Onda 2: CI verde apos pip-audit | O origin/main tem Security Scan verde com aiohttp e cryptography acima das CVEs do run 32669664058 | 3 | G | 2026-09-18 | cursor-grok-4.6 |
 | [WS-002](workstreams/WS-002-overlay-ci-f14-segredos/STATE.md) | Overlay 1.1.0, CI e classificacao F1.4 | A GennomX AI tem overlay 1.1.0 com lock sourceCommit, CI ampla com action composta de install/cache sem perder paralelismo, e alertas F1.4 classificados sem ler arquivos de ambiente ignorados. | 3 | G | 2026-08-23 | cursor-grok-4.6 |
 | [WS-001](workstreams/WS-001-adocao-do-ai-ready-first-4-0/STATE.md) | Adocao do AI Ready First 4.0 | A GennomX AI opera sob AI Ready First 4.0.0 com AGENTS.md residente enxuto e validadores verdes | 3 | — | 2026-08-21 | cursor-grok-4.6 |
 

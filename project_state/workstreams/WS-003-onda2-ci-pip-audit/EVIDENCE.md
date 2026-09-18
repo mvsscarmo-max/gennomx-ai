@@ -254,3 +254,43 @@ Lock: `node_modules/brace-expansion` 1.1.18;
 **Conclusão sustentada:** contratos de minimatch e Next restaurados; audit 0.
 F-007 e F-008 resolvidos neste SHA.
 
+---
+
+## E-011 — T-017: G13 verde no tip fe006d3 (39/0/0)
+
+**Tarefa:** T-017 · **Quando:** 2026-09-18T17:25:16Z · **Commit:** `fe006d3b7adb1373c560737f26b03922efe1f055`
+**Gate:** G13
+
+Janela inclui a correção `dbd127c` (R-01/R-02) e o ledger da RC AUD-002.
+
+```console
+$ python -X utf8 -B tools/verify.py --ws WS-003 --exec-criteria
+G13 — verificação diferencial
+raiz: C:\Users\marcu\Desktop\Projetos IA\Criação de sites\New GennonX Claude 2.0\.tmp\gx-ai-onda2
+
+[OK    ] g13-verify             39 verificacoes, 0 erro(s), 0 aviso(s)
+```
+
+**Conclusão sustentada:** G13 verde no tip após corrigir os contratos npm.
+
+---
+
+## E-012 — Gate G14 aceito pelo fundador
+
+**Tarefa:** T-017 · **Quando:** 2026-09-18T17:25:16Z · **Commit:** `fe006d3b7adb1373c560737f26b03922efe1f055`
+**Gate:** G14
+**Assinante:** Marcus (fundador)
+**RC:** AUD-002
+**G13:** E-011
+**Decisão:** ACEITO
+**Veredito:** ACEITO
+**Ressalvas:** AUD-002 R-01/R-02 corrigidos em `dbd127c` (E-010); F-007 e F-008 resolvidos. Merge `ws003-t017-g13` → `main` ainda não feito (D-075). Sem push.
+**Autorização nesta sessão:** "G14 Aceito. Corrigir nesta WS — restringir brace-expansion 1.x ao ramo vulnerável e manter 5.x; sharp em 0.35.4+ (ou tirar o override); regenerar lock; npm ci/audit/lint/build/E2E; G13 de novo; depois G14."
+
+```console
+$ git rev-parse HEAD
+fe006d3b7adb1373c560737f26b03922efe1f055
+```
+
+Agente transcreveu o aceite; não assinou.
+

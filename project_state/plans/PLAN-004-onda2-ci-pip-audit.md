@@ -1,6 +1,6 @@
 # PLAN-004 — Onda 2: CI verde após pip-audit
 
-**Status:** em execução
+**Status:** concluído
 **Criado em:** 2026-09-01 · **Autor:** agente, SIM do fundador (Onda 2)
 **Aprovado por:** Marcus em 2026-09-01
 **Workstream:** WS-003 · **Nível de risco:** 3
@@ -28,4 +28,4 @@ O `main` no origin tem o job Security Scan verde: `pip-audit -r requirements.loc
 
 - [x] Lock declara aiohttp 3.14.3 → comando: `python -X utf8 -c "print('aiohttp==3.14.3' in open('backend/requirements.lock',encoding='utf-8').read())"`
 - [x] Lock declara cryptography 50.0.1 → comando: `python -X utf8 -c "print('cryptography==50.0.1' in open('backend/requirements.lock',encoding='utf-8').read())"`
-- [ ] G13 da WS-003 verde no tip → comando: `python -X utf8 -B tools/verify.py --ws WS-003`
+- [x] G13 da WS-003 verde no tip → comando: `python -X utf8 -B tools/verify.py --ws WS-003`
