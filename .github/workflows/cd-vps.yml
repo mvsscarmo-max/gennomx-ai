@@ -103,7 +103,7 @@ jobs:
           set -euo pipefail
           tag="sha-${GITHUB_SHA:0:7}"
           rsync -az scripts/cd-vps-remote.sh root@89.116.214.14:/tmp/gx-cd-ai.sh
-          ssh -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes root@89.116.214.14 \
+          ssh -o StrictHostKeyChecking=yes root@89.116.214.14 \
             "GHCR_TOKEN='$GHCR_TOKEN' GHCR_USER='$GHCR_USER' \
              BACKEND_IMAGE='${BACKEND_IMAGE}' FRONTEND_IMAGE='${FRONTEND_IMAGE}' \
              IMAGE_TAG='$tag' bash /tmp/gx-cd-ai.sh"
