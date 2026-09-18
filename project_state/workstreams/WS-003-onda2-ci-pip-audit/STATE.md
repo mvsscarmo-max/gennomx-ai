@@ -14,11 +14,11 @@ agents:
   - id: cursor-grok-4.6
     harness: cursor
     session_id: "onda2-ci-t017-20260918"
-    last_seen: "2026-09-18T16:52:36Z"
+    last_seen: "2026-09-18T17:22:14Z"
 branch: "ws003-t017-g13"
 worktree: "C:/Users/marcu/Desktop/Projetos IA/Criação de sites/New GennonX Claude 2.0/.tmp/gx-ai-onda2"
 base_commit: "0185ccf83ae383b535ac440a2db1583fa2b06f89"
-current_commit: "3bfbb43dc612ab18e3c659ba7fbde129a918e8a9"
+current_commit: "dbd127ccca3ce099d805e15f9a645c6fc78dc32a"
 validated_commit: "8d5a553e9dca6f4e97a6f42da7f8bd14656daab5"
 open_questions: []
 risks:
@@ -48,7 +48,7 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 - [x] T-014 — Pinos aiohttp/cryptography, push e CI (PLAN-004) — `concluída` → EVIDENCE.md#E-001
 - [x] T-015 — Lock overlay 1.1.0 em bytes LF + CI protocol (ad-hoc 2B.1) — `concluída` → EVIDENCE.md#E-002 / run 33583382886
 - [x] T-016 — npm audit e mypy/numpy no runner 3.12 (ad-hoc 2B.2) — `concluída` → EVIDENCE.md#E-003 / E-004
-- [ ] T-017 — G13 / RC / G14 de fechamento (PLAN-004) — `em andamento` → EVIDENCE.md#E-005 / E-006
+- [ ] T-017 — G13 / RC / G14 de fechamento (PLAN-004) — `em andamento` → EVIDENCE.md#E-005 / E-006 / E-008 / E-009 / E-010
 
 ## Skills selecionadas
 
@@ -56,8 +56,13 @@ O `origin/main` tem o job Security Scan verde com `aiohttp` e `cryptography` aci
 selected_skills:
   - name: no-workarounds
     version: 1.0.0
-    reason: causa raiz do npm ci e do mypy aclose, nao silenciar jobs
+    reason: R-01/R-02 — override global calava a faixa do consumidor
     trigger: corrigir codigo
+    mandatory: true
+  - name: deslop
+    version: 1.0.0
+    reason: G5 em E-010 sobre o diff de overrides
+    trigger: commitar
     mandatory: true
   - name: cycle-review
     version: 1.0.0
@@ -75,9 +80,6 @@ selected_skills:
     trigger: retomar workstream
     mandatory: true
 skipped_skills:
-  - name: deslop
-    reason: G5 em E-007; skill negativa para diff so de documentacao
-    approved_by: agente
   - name: qa-execution
     reason: sem superficie de produto nova
     approved_by: agente
@@ -93,18 +95,18 @@ _nenhum_
 
 ## Gates pendentes
 
-- G14 — aceite humano. G13 verde em E-006. G5 em E-007. RC ainda não rodou.
+- G14 — aceite humano já dito nesta sessão; transcrever após G13 no tip com R-01/R-02.
 
 ## Não validado
 
-- RC. G14. D-008 era escape da WS-002 (prazo 2026-09-06), não desta.
+- G14 ainda não transcrito neste tip. Merge `ws003-t017-g13` → `main` (D-075). Sem push.
 
 ## Digest
 
 ### 2026-09-18 — cursor-grok-4.6
-- Feito: PLAN-004 `em execução`; T-017 cita o plano; G5 E-007; validate 883/0.
-- Pendente: commit desta passagem; RC; G14. Sem dirt R2.
-- Proxima acao: RC OpenCode/GPT 5.6 SOL; agente nao assina G14.
+- Feito: R-01/R-02 no tip `dbd127c` (E-010). `brace-expansion@1` + 5.0.12; sharp 0.35.4; js-yaml 4.3.2. npm ci/audit/lint/typecheck/build/E2E 7/7.
+- Pendente: G13 neste tip; transcrever G14 (Marcus: "G14 Aceito"); merge. Sem dirt R2. Sem push.
+- Proxima acao: G13; G14 no EVIDENCE.
 
 ### 2026-09-18 — cursor-grok-4.6
 - Feito: worktree limpo `2fa5e84` (sem dirt R2). G13 12 erros (E-005).
