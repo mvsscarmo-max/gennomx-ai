@@ -109,3 +109,11 @@ Os arquivos originais foram preservados em:
 ```txt
 docs/_fontes_originais/
 ```
+
+## CD (D-124)
+
+Push em `main` só atualiza a VPS depois da CI verde. O workflow `.github/workflows/cd-vps.yml`
+publica API e frontend no GHCR, dá pull na VPS, retag para `gennomx-ai-api-current:edge` e
+`gennomx-ai-frontend:edge`, e recria api/frontend/worker/beat no projeto `gennomx-ai-edge`.
+Não usa `VPS_updateProjectV1`. Não toca Redis nem Postgres. Secret: `VPS_SSH_PRIVATE_KEY`.
+`docker-backend.yml` só publica GHCR via `workflow_dispatch` — o caminho automático é o CD.
