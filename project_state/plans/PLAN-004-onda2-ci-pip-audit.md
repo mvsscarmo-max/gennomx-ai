@@ -1,6 +1,7 @@
 # PLAN-004 — Onda 2: CI verde após pip-audit
 
-**Status:** aprovado · **Criado em:** 2026-09-01 · **Autor:** agente, SIM do fundador (Onda 2)
+**Status:** em execução
+**Criado em:** 2026-09-01 · **Autor:** agente, SIM do fundador (Onda 2)
 **Aprovado por:** Marcus em 2026-09-01
 **Workstream:** WS-003 · **Nível de risco:** 3
 **Decisões relacionadas:** D-008 · **Findings relacionados:** nenhum local

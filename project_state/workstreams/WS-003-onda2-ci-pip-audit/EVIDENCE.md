@@ -119,3 +119,27 @@ Não inventou console. Dirt R2 do checkout `GennomX AI/` não está neste worktr
 
 **Não validado:** RC, G14, commit do tip.
 
+---
+
+## E-007 — G5: deslop não aplicável (só estado/plano)
+
+**Tarefa:** T-017 · **Quando:** 2026-09-18T16:52:36Z · **Commit:** `3bfbb43dc612ab18e3c659ba7fbde129a918e8a9`
+**Gate:** G5
+**Resumo (1–3 frases):** Diff só de PLAN-004 e STATE/EVIDENCE. Skill deslop não
+aplica a documentação. Nenhum slop de código a remover.
+
+Diff desta passagem: `PLAN-004` (status `em execução`) e `STATE.md` (origem
+PLAN-004 em T-017, `pending_gates`, `current_commit`). Sem código de produto.
+Skill `deslop` tem gatilho negativo para diff só de documentação: não há
+comentário, cast, defesa nem aninhamento a remover.
+
+`validate.py` nesta árvore: 883/0.
+
+```console
+$ python -X utf8 -B tools/validate.py
+OK — 883 verificacoes, 0 erros, 0 aviso(s).
+```
+
+**Conclusão sustentada:** G5 cumprido por inaplicabilidade documentada, não por
+limpeza de slop de código.
+
