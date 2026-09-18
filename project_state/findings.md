@@ -50,3 +50,32 @@ O arquivo v1 registra que `docker compose config` interpolou segredos. Não repe
 **Workstream:** WS-001 / T-012
 
 Mencoes a sandbox de scraper/teste em docs de produto, sem contexto de exclusao D-044 no mesmo paragrafo. Hits credential-pair em codigo de env. Nove links residuais (protocolo_vlaeg_2.0.md e similares). Isolamento de scraper nao e ai-jail; a redacao precisa declarar a exclusao.
+
+## F-007 — Override global rebaixa brace-expansion para major incompatível
+
+**Data:** 2026-09-18 · **Origem:** revisão (AUD-002 R-01)
+**Autoridade:** evidence · **Workstream:** WS-003 · **Commit:** `dbd127ccca3ce099d805e15f9a645c6fc78dc32a`
+**Status:** resolvido em T-017
+
+**Detalhe:** `frontend/package.json` override `brace-expansion` em `1.1.18`. `minimatch@10.2.5` pede `brace-expansion@^5.0.5`. Classe `contrato`, severidade alta.
+
+**Como foi observado:** `audits/AUD-002-onda2-ci-pip-audit.md` R-01; `EVIDENCE.md#E-009`
+
+**Consequência:** T-016 fecha o npm audit mas viola a faixa do consumidor. Destino: corrigido em T-017 (`brace-expansion@1` + 5.x no lock).
+
+**Vale além desta tarefa?** sim
+
+## F-008 — Override de sharp fora da faixa aceita pelo Next 15.5.25
+
+**Data:** 2026-09-18 · **Origem:** revisão (AUD-002 R-02)
+**Autoridade:** evidence · **Workstream:** WS-003 · **Commit:** `dbd127ccca3ce099d805e15f9a645c6fc78dc32a`
+**Status:** resolvido em T-017
+
+**Detalhe:** override `sharp@0.35.3`; `next@15.5.25` declara `sharp@^0.34.3 || ^0.35.4`. Classe `contrato`, severidade alta.
+
+**Como foi observado:** `audits/AUD-002-onda2-ci-pip-audit.md` R-02; `EVIDENCE.md#E-009`
+
+**Consequência:** CI verde não prova contrato transitivo. Destino: corrigido em T-017 (`sharp@0.35.4`).
+
+**Vale além desta tarefa?** sim
+
